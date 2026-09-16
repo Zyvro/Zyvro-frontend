@@ -498,7 +498,14 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
   const initial = (me?.name || me?.email || "?").trim().charAt(0).toUpperCase()
 
   return (
-    <div className={cn("flex bg-background text-foreground overflow-hidden", embedded ? "h-full" : "h-screen")}>
+    <div
+      className={cn(
+        "flex bg-background text-foreground overflow-hidden",
+        // Voir globals.css : rend sa gouttière de défilement à la page, parce
+        // qu'ici rien ne défile et que la toile va jusqu'au bord.
+        embedded ? "h-full" : "h-screen zy-fullbleed"
+      )}
+    >
       {/* Left rail */}
       <nav className="flex w-16 shrink-0 flex-col items-center border-r border-white/[0.06] bg-background py-3">
         {!embedded && (

@@ -207,12 +207,17 @@ export default function StorePage() {
   const router = useRouter()
   const { data: me } = useMe()
   const copy = useCopyStoreTemplate()
-  // ?tab= décide l'onglet d'arrivée, parce que tout ce qui pointait vers
-  // Explore pointe maintenant ici et doit tomber sur les workflows, pas sur les
-  // nœuds. Lu une fois pour l'état initial : ensuite c'est le clic qui décide.
+  // Les workflows d'abord : c'est ce qu'on vient chercher en ouvrant une
+  // boutique. Un pack de nœuds est une dépendance d'un workflow, et l'onglet
+  // d'à côté le tient. Le desktop range les siens dans le même ordre, et deux
+  // boutiques qui n'ouvrent pas sur la même chose sont deux boutiques.
+  //
+  // ?tab= peut encore désigner l'autre, parce que tout ce qui pointait vers
+  // Explore pointe maintenant ici. Lu une fois pour l'état initial : ensuite
+  // c'est le clic qui décide.
   const params = useSearchParams()
   const [section, setSection] = useState<Section>(
-    params.get("tab") === "workflows" ? "workflows" : "nodes"
+    params.get("tab") === "nodes" ? "nodes" : "workflows"
   )
   const [query, setQuery] = useState("")
 
