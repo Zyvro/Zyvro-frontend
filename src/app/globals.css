@@ -1,0 +1,278 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS custom properties (dark-first product).
+   Palette: near-black canvas, graphite cards, indigo accent. */
+:root {
+  --background: 240 7% 5%;
+  --foreground: 0 0% 96%;
+  --card: 240 6% 9%;
+  --card-foreground: 0 0% 96%;
+  --popover: 240 6% 9%;
+  --popover-foreground: 0 0% 96%;
+  --primary: 243 75% 59%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 5% 13%;
+  --secondary-foreground: 0 0% 96%;
+  --muted: 240 5% 13%;
+  --muted-foreground: 240 5% 58%;
+  --accent: 240 5% 15%;
+  --accent-foreground: 0 0% 96%;
+  --destructive: 0 70% 55%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5% 16%;
+  --input: 240 5% 18%;
+  --ring: 243 75% 59%;
+  --radius: 0.75rem;
+
+  /* Port colors (edges + handles share them) */
+  --port-text: 262 83% 68%;
+  --port-image: 172 66% 50%;
+  --port-json: 38 92% 55%;
+  --port-any: 240 5% 58%;
+  --port-tool: 350 89% 60%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Floating glass panel used by the builder chrome */
+  .panel {
+    @apply rounded-xl border border-white/[0.08] bg-card/95 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur;
+  }
+  .checker {
+    background-color: #1a1a1f;
+    background-image:
+      linear-gradient(45deg, #24242a 25%, transparent 25%),
+      linear-gradient(-45deg, #24242a 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #24242a 75%),
+      linear-gradient(-45deg, transparent 75%, #24242a 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  }
+}
+
+/* Global custom scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted)) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted) / 0.9);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.8);
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ---------- React Flow ---------- */
+.react-flow {
+  --xy-background-color: hsl(var(--background));
+  --xy-edge-stroke-width-default: 1.5;
+}
+.react-flow__attribution {
+  display: none;
+}
+.react-flow__pane {
+  cursor: default;
+}
+.react-flow__pane.dragging {
+  cursor: grabbing;
+}
+.react-flow__node {
+  cursor: grab;
+}
+.react-flow__node.dragging {
+  cursor: grabbing;
+}
+/* Hovered card floats above neighbours so its port labels stay readable */
+.react-flow__node:hover {
+  z-index: 1000 !important;
+}
+.react-flow__edge-path {
+  stroke-linecap: round;
+}
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+.react-flow__connectionline path {
+  stroke: hsl(var(--primary));
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+}
+.react-flow__minimap {
+  @apply !rounded-xl !border !border-white/[0.08] !bg-card/95 !shadow-[0_8px_32px_rgba(0,0,0,0.55)];
+}
+.react-flow__minimap-mask {
+  fill: hsl(var(--background) / 0.7);
+}
+.react-flow__minimap-node {
+  fill: hsl(var(--muted-foreground) / 0.5);
+  stroke: none;
+}
+.react-flow__nodesselection-rect,
+.react-flow__selection {
+  background: hsl(var(--primary) / 0.08);
+  border: 1px dashed hsl(var(--primary) / 0.6);
+  border-radius: 6px;
+}
+
+/* Ring-style port handles: colored ring on the card edge, fills on hover.
+   Color encodes the port type. */
+.react-flow .react-flow__handle {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border-radius: 9999px;
+  box-sizing: border-box;
+  background: hsl(var(--card)) !important;
+  border: 2.5px solid hsl(var(--port-any)) !important;
+  box-shadow: 0 0 0 3px hsl(var(--card));
+  z-index: 5;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+/* React Flow centers handles on the card edge with a translate; keep it
+   when scaling so the ring does not jump on hover. */
+.react-flow .react-flow__handle-left {
+  transform: translate(-50%, -50%) scale(var(--hs, 1));
+}
+.react-flow .react-flow__handle-right {
+  transform: translate(50%, -50%) scale(var(--hs, 1));
+}
+.react-flow .react-flow__handle-bottom {
+  transform: translate(-50%, 50%) scale(var(--hs, 1));
+}
+.react-flow .group:hover .react-flow__handle {
+  --hs: 1.15;
+}
+.react-flow .react-flow__handle:hover,
+.react-flow .react-flow__handle.valid,
+.react-flow .group:hover .react-flow__handle:hover {
+  --hs: 1.4;
+}
+
+/* Port name labels, revealed on card hover */
+.port-label {
+  position: absolute;
+  pointer-events: none;
+  white-space: nowrap;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 6px;
+  border: 1px solid hsl(0 0% 100% / 0.1);
+  background: hsl(var(--card) / 0.95);
+  color: hsl(var(--muted-foreground));
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: opacity 0.15s ease;
+  z-index: 6;
+}
+.port-label-left {
+  right: calc(100% + 14px);
+}
+.port-label-right {
+  left: calc(100% + 14px);
+}
+.port-label-bottom {
+  left: 50%;
+  top: calc(100% + 14px);
+  transform: translate(-50%, 0);
+}
+.group:hover .port-label {
+  opacity: 1;
+}
+.port-label-text { color: hsl(var(--port-text)); }
+.port-label-image { color: hsl(var(--port-image)); }
+.port-label-json { color: hsl(var(--port-json)); }
+.port-label-tool { color: hsl(var(--port-tool)); }
+.react-flow .react-flow__handle-port-text {
+  border-color: hsl(var(--port-text)) !important;
+}
+.react-flow .react-flow__handle-port-text:hover {
+  background: hsl(var(--port-text)) !important;
+}
+.react-flow .react-flow__handle-port-image {
+  border-color: hsl(var(--port-image)) !important;
+}
+.react-flow .react-flow__handle-port-image:hover {
+  background: hsl(var(--port-image)) !important;
+}
+.react-flow .react-flow__handle-port-json {
+  border-color: hsl(var(--port-json)) !important;
+}
+.react-flow .react-flow__handle-port-json:hover {
+  background: hsl(var(--port-json)) !important;
+}
+.react-flow .react-flow__handle-port-any {
+  border-color: hsl(var(--port-any)) !important;
+}
+.react-flow .react-flow__handle-port-any:hover {
+  background: hsl(var(--port-any)) !important;
+}
+.react-flow .react-flow__handle-port-tool {
+  border-color: hsl(var(--port-tool)) !important;
+}
+.react-flow .react-flow__handle-port-tool:hover {
+  background: hsl(var(--port-tool)) !important;
+}
+
+/* Node status accents */
+.node-status-idle {
+  @apply border-white/[0.08];
+}
+.node-status-queued {
+  @apply border-amber-400/50;
+}
+.node-status-running {
+  @apply border-sky-400/70 shadow-[0_0_0_1px_hsl(199_89%_60%/0.35),0_0_24px_hsl(199_89%_60%/0.25)];
+}
+.node-status-completed {
+  @apply border-emerald-400/50;
+}
+.node-status-cached {
+  @apply border-emerald-300/40;
+}
+.node-status-failed {
+  @apply border-red-400/60;
+}
+
+@keyframes zy-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.zy-spin {
+  animation: zy-spin 1s linear infinite;
+}
