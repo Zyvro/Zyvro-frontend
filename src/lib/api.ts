@@ -214,6 +214,76 @@ export function localOnlyNodes(err: unknown): LocalOnlyNodes | null {
   return p
 }
 
+// ---------------------------------------------------------------------------
+// The store
+//
+// Node packs and workflow templates other people published. Reading needs no
+// account: a catalogue behind a login is a catalogue nobody browses.
+
+export type StorePackNode = {
+  type: string
+  label: string
+  category: string
+  description: string
+  inputs: string[]
+  outputs: string[]
+  // Which file in the pack defines this node, so the reader can find it.
+  source: string
+}
+
+export type StorePack = {
+  id: string
+  name: string
+  version: string
+  description: string
+  author: string
+  capabilities: string[]
+  nodes: StorePackNode[]
+  // A SHA-256 over the pack's installable content. A version is immutable, and
+  // this is what makes that promise checkable rather than merely stated.
+  digest: string
+  publisher_name?: string
+  yanked?: boolean
+  created_at: string
+  // Only the single-pack routes carry the code; listings leave it out.
+  sources?: { path: string; code: string }[]
+}
+
+export type StorePackRef = { name: string; version: string; digest: string }
+
+export type StoreTemplate = {
+  id: string
+  name: string
+  version: string
+  description: string
+  graph_json: string
+  requires: StorePackRef[]
+  node_types: string[]
+  // The node types that come from a pack rather than from the engine. It is
+  // what decides whether this template can run anywhere but a desktop.
+  pack_node_types: string[]
+  publisher_name?: string
+  yanked?: boolean
+  created_at: string
+}
+
+export type StoreTemplateDetail = {
+  template: StoreTemplate
+  packs?: StorePack[]
+  installable?: boolean
+  problems?: { name: string; reason: string }[]
+}
+
+export const store = {
+  packs: (q = "") => request<{ packs: StorePack[]; next_cursor: string }>(`/api/store/nodes${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+  pack: (name: string) => request<StorePack>(`/api/store/nodes/${encodeURIComponent(name)}`),
+  templates: (q = "") =>
+    request<{ templates: StoreTemplate[]; next_cursor: string }>(
+      `/api/store/workflows${q ? `?q=${encodeURIComponent(q)}` : ""}`
+    ),
+  template: (name: string) => request<StoreTemplateDetail>(`/api/store/workflows/${encodeURIComponent(name)}`),
+}
+
 export const RATE_LIMITED = "rate_limited"
 
 export type AppSettings = {
