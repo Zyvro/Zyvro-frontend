@@ -461,15 +461,12 @@ export function Zynode({ id, data, selected }: ZynodeProps) {
             disabled={status === "running" || status === "queued"}
             title="Run this node only (upstream is reused from the previous run when unchanged)"
           >
-            {status === "running" ? (
-              <>
-                <Loader2 className="h-3 w-3 zy-spin" /> Running
-              </>
-            ) : (
-              <>
-                <Play className="h-3 w-3" /> Run {category === "AI" ? "Model" : "Node"}
-              </>
-            )}
+            {/* The label does not change while the node runs. The pill beside
+                it is the status channel — it is what later says Cached, Done in
+                1200 ms or Failed — and having the button say "Running" too put
+                the word on screen twice, side by side. The button stays a
+                control: disabled, tinted, still named after what it does. */}
+            <Play className="h-3 w-3" /> Run {category === "AI" ? "Model" : "Node"}
           </button>
           <StatusPill status={status} latency={data._latency} />
         </div>
