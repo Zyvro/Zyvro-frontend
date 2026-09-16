@@ -2,10 +2,10 @@
 
 import { useState } from "react"
 import * as Dialog from "@radix-ui/react-dialog"
-import { Check, ExternalLink, Plus, X } from "lucide-react"
+import { Check, ChevronDown, ChevronUp, ExternalLink, Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useDeleteSecret, useProviders, useSetSecret } from "@/lib/hooks"
+import { useDeleteSecret, useProviders, useSaveProviderOrder, useSetSecret } from "@/lib/hooks"
 import type { ProviderInfo } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
@@ -83,12 +83,23 @@ function ProviderIcon({ id }: { id: string }) {
   )
 }
 
-// CATEGORIES give each role a heading and a line explaining what it covers.
-const CATEGORIES: { role: string; title: string; blurb: string }[] = [
+// CATEGORIES give each job a heading and a line explaining what it covers.
+//
+// Three, not two. "Image & vision" was one heading because Google does both,
+// and that heading was a lie about the others: Black Forest Labs generates an
+// image and cannot read one, Ollama reads one and cannot generate. Somebody
+// holding only Black Forest Labs was told they were set for vision when they
+// were not.
+const CATEGORIES: { role: Role; title: string; blurb: string }[] = [
   {
     role: "image",
-    title: "Image & vision",
-    blurb: "Needed by every image generation, image editing and vision node. These are alternatives — one connected account is enough.",
+    title: "Image generation",
+    blurb: "Backs image generation and editing nodes. These are alternatives — one connected account is enough.",
+  },
+  {
+    role: "vision",
+    title: "Vision",
+    blurb: "Backs vision nodes and lets the chat assistant look at an image you attach. These are alternatives — one connected account is enough.",
   },
   {
     role: "text",
@@ -96,6 +107,8 @@ const CATEGORIES: { role: string; title: string; blurb: string }[] = [
     blurb: "Backs text nodes and the Brain agent. These are alternatives — one connected account is enough.",
   },
 ]
+
+type Role = "text" | "image" | "vision"
 
 function StatusBadge({ provider }: { provider: ProviderInfo }) {
   if (provider.has_user_key) {
@@ -117,11 +130,22 @@ function StatusBadge({ provider }: { provider: ProviderInfo }) {
   )
 }
 
-function ProviderTile({ provider, onOpen }: { provider: ProviderInfo; onOpen: () => void }) {
+function ProviderTile({
+  provider,
+  onOpen,
+  rank,
+  onMoveUp,
+  onMoveDown,
+}: {
+  provider: ProviderInfo
+  onOpen: () => void
+  /** Its position in the job's order, shown only when there is an order. */
+  rank?: number
+  onMoveUp?: () => void
+  onMoveDown?: () => void
+}) {
   return (
-    <button
-      type="button"
-      onClick={onOpen}
+    <div
       className={cn(
         "group flex w-full items-center gap-3 rounded-xl border bg-card p-4 text-left transition-colors",
         provider.has_user_key
@@ -131,6 +155,15 @@ function ProviderTile({ provider, onOpen }: { provider: ProviderInfo; onOpen: ()
             : "border-white/[0.08] hover:border-white/25"
       )}
     >
+      {rank !== undefined && (
+        <span
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-[10px] font-semibold text-muted-foreground"
+          title={rank === 1 ? "Tried first" : `Tried ${rank}${rank === 2 ? "nd" : rank === 3 ? "rd" : "th"}`}
+        >
+          {rank}
+        </span>
+      )}
+      <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-3 text-left">
       <ProviderIcon id={provider.id} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
@@ -151,7 +184,34 @@ function ProviderTile({ provider, onOpen }: { provider: ProviderInfo; onOpen: ()
           {provider.has_user_key ? <Check className="h-4 w-4 opacity-0" /> : <Plus className="h-4 w-4" />}
         </span>
       </div>
-    </button>
+      </button>
+
+      {/* Arrows rather than a drag: this is a list of two or three, a drag
+          needs a pointer and a steady hand, and an arrow says which way it
+          will go before you commit to it. */}
+      {(onMoveUp || onMoveDown) && (
+        <span className="flex shrink-0 flex-col">
+          <button
+            type="button"
+            title="Try this one earlier"
+            disabled={!onMoveUp}
+            onClick={onMoveUp}
+            className="rounded p-0.5 text-muted-foreground hover:bg-white/[0.08] hover:text-foreground disabled:opacity-25"
+          >
+            <ChevronUp className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            title="Try this one later"
+            disabled={!onMoveDown}
+            onClick={onMoveDown}
+            className="rounded p-0.5 text-muted-foreground hover:bg-white/[0.08] hover:text-foreground disabled:opacity-25"
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        </span>
+      )}
+    </div>
   )
 }
 
@@ -283,31 +343,85 @@ function DialogBody({ provider, onClose }: { provider: ProviderInfo; onClose: ()
   )
 }
 
+// ordered puts a job's providers in the order the account asked for, with
+// anything it did not mention after them, in the catalogue's own order.
+//
+// The saved order can name a provider whose key has since been removed; it is
+// kept in the list rather than dropped, because it is still the account's
+// stated preference and removing it would silently forget a choice the moment a
+// key was rotated.
+function ordered(list: ProviderInfo[], want: string[] | undefined): ProviderInfo[] {
+  if (!want || want.length === 0) return list
+  const rank = new Map(want.map((id, index) => [id, index]))
+  return [...list].sort((a, b) => {
+    const ra = rank.get(a.id) ?? Number.MAX_SAFE_INTEGER
+    const rb = rank.get(b.id) ?? Number.MAX_SAFE_INTEGER
+    return ra - rb
+  })
+}
+
 export function ProviderKeys({ compact = false }: { compact?: boolean }) {
-  const { data: providers, isLoading, isError } = useProviders()
+  const { data, isLoading, isError } = useProviders()
+  const saveOrder = useSaveProviderOrder()
   const [open, setOpen] = useState<string | null>(null)
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading providers…</p>
-  if (isError || !providers) return <p className="text-sm text-red-300">Could not load the provider list.</p>
+  if (isError || !data) return <p className="text-sm text-red-300">Could not load the provider list.</p>
+
+  const providers = data.providers
+  const order = data.order ?? {}
 
   // The dialog reads from the query, so it always shows the current state even
   // after a save changes it underneath.
   const selected = providers.find((p) => p.id === open) ?? null
 
+  // Moving one provider up or down in a job's list. Buttons rather than drag:
+  // this is a list of two or three, a drag needs a pointer and a steady hand,
+  // and an arrow says which way it will go before you commit to it.
+  const move = (role: Role, list: ProviderInfo[], from: number, to: number) => {
+    if (to < 0 || to >= list.length) return
+    const ids = list.map((p) => p.id)
+    const [moved] = ids.splice(from, 1)
+    ids.splice(to, 0, moved)
+    saveOrder.mutate({ ...order, [role]: ids })
+  }
+
   return (
     <div className={compact ? "space-y-4" : "space-y-6"}>
       {CATEGORIES.map((cat) => {
-        const list = providers.filter((p) => p.role === cat.role)
+        const list = ordered(
+          providers.filter((p) => p.roles.includes(cat.role)),
+          order[cat.role]
+        )
         if (list.length === 0) return null
+        // The question only exists once two of them are connected. Below that
+        // there is nothing to order, and showing arrows would be asking about a
+        // choice that has not arisen.
+        const orderable = list.filter((p) => p.has_user_key).length > 1
+
         return (
           <section key={cat.role}>
             <div className="mb-2">
               <div className="text-sm font-semibold">{cat.title}</div>
               <p className="text-[11px] text-muted-foreground">{cat.blurb}</p>
+              {orderable && (
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Tried in this order. The first one with a key does the work.
+                </p>
+              )}
             </div>
             <div className={compact ? "grid grid-cols-1 gap-2" : "grid grid-cols-1 gap-2 md:grid-cols-2"}>
-              {list.map((p) => (
-                <ProviderTile key={p.id} provider={p} onOpen={() => setOpen(p.id)} />
+              {list.map((p, index) => (
+                <ProviderTile
+                  key={p.id}
+                  provider={p}
+                  onOpen={() => setOpen(p.id)}
+                  rank={orderable ? index + 1 : undefined}
+                  onMoveUp={orderable && index > 0 ? () => move(cat.role, list, index, index - 1) : undefined}
+                  onMoveDown={
+                    orderable && index < list.length - 1 ? () => move(cat.role, list, index, index + 1) : undefined
+                  }
+                />
               ))}
             </div>
           </section>

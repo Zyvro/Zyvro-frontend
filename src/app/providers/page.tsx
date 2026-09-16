@@ -26,20 +26,28 @@ function AuthRedirect() {
 }
 
 // Summary says, in one line, what is actually still needed. Counting required
-// providers would overstate it: the three text providers are alternatives, so
-// four flags really mean two decisions.
+// providers would overstate it: the providers of one job are alternatives, so
+// several flags really mean one decision.
 function Summary() {
-  const { data: providers, isLoading } = useProviders()
-  if (isLoading || !providers) return null
+  const { data, isLoading } = useProviders()
+  if (isLoading || !data) return null
+  const providers = data.providers
 
   const connected = providers.filter((p) => p.has_user_key)
-  const missingImage = providers.filter((p) => p.role === "image" && p.required)
-  const textMissing = providers.some((p) => p.role === "text" && p.required)
+  const covers = (p: { roles: string[] }, role: string) => p.roles.includes(role)
 
-  const todo: string[] = missingImage.map((p) => p.label)
-  if (textMissing) {
-    const options = providers.filter((p) => p.role === "text").map((p) => p.label)
-    todo.push(`a key for one of ${options.join(", ")}`)
+  // One line per job that nothing covers, naming what would cover it. Listing
+  // each unconfigured provider instead would read as a shopping list when any
+  // one of them is enough.
+  const todo: string[] = []
+  for (const [role, label] of [
+    ["image", "image generation"],
+    ["vision", "vision"],
+    ["text", "text generation"],
+  ] as const) {
+    const forRole = providers.filter((p) => covers(p, role))
+    if (forRole.length === 0 || forRole.some((p) => p.has_user_key)) continue
+    todo.push(`${label}: a key for one of ${forRole.map((p) => p.label).join(", ")}`)
   }
 
   if (todo.length === 0) {

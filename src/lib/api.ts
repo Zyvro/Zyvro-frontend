@@ -212,7 +212,17 @@ export const api = {
       body: JSON.stringify({ mode, text: text ?? "" }),
     }),
 
-  listProviders: () => request<ProviderInfo[]>("/api/providers"),
+  listProviders: () =>
+    request<{ providers: ProviderInfo[]; order: Record<string, string[]> | null }>("/api/providers"),
+
+  // The order this account wants its providers tried in, per job. Only sent
+  // when there is something to order: an account with one credential for a job
+  // never sees the question.
+  saveProviderOrder: (order: Record<string, string[]>) =>
+    request<{ order: Record<string, string[]> }>("/api/providers/order", {
+      method: "PUT",
+      body: JSON.stringify({ order }),
+    }),
   listSecrets: () => request<ProviderSecret[]>("/api/secrets"),
   setSecret: (provider: string, secret: string) =>
     request<{ provider: string; secret_last4: string }>("/api/secrets", {
@@ -685,10 +695,13 @@ export type ProviderInfo = {
   platform_key: boolean
   user_key_last4: string
   has_user_key: boolean
-  // Providers sharing a role do the same job: the three "text" providers are
+  // Providers sharing a role do the same job: the "text" providers are
   // alternatives (holding a key for any one clears `required` on all three),
   // while the "image" provider stands alone.
-  role: "text" | "image"
+  // The jobs this provider can do. More than one, because Google generates
+  // images and reads them, and Ollama writes text and reads images — which is
+  // why "Image & vision" was one heading and should not have been.
+  roles: ("text" | "image" | "vision")[]
   // The text provider a node uses when it names none.
   is_default: boolean
   required: boolean

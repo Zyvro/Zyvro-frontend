@@ -333,6 +333,20 @@ export function useProviders() {
   })
 }
 
+// Saving the order the account wants its providers tried in. The list is
+// refetched afterwards because the server cleans what it is sent — it drops a
+// provider named for a job it cannot do — and the page should show what was
+// actually kept rather than what was asked for.
+export function useSaveProviderOrder() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (order: Record<string, string[]>) => api.saveProviderOrder(order),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.providers() })
+    },
+  })
+}
+
 // ---- Free writing helper ----
 
 // While the helper is on cooldown the quota is polled so the buttons re-enable
