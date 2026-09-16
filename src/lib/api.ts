@@ -31,6 +31,10 @@ export type MissingProviderKeys = {
   code: typeof MISSING_PROVIDER_KEY
   hint: string
   providers: ProviderInfo[]
+  // Which missing providers something else would satisfy, keyed by provider
+  // id. The three text providers do the same job, so being told to fetch an
+  // Ollama key when an OpenAI one is already in hand is a wasted trip.
+  alternatives?: Record<string, string[]>
 }
 
 // missingProviderKeys returns the payload when an error is that refusal.

@@ -105,15 +105,25 @@ export function MissingKeysPanel({
 
           <div className="mt-3 space-y-2">
             {missing.providers.map((p) => (
-              <ProviderRow
-                key={p.id}
-                provider={p}
-                onSaved={() => {
-                  const next = { ...saved, [p.id]: true }
-                  setSaved(next)
-                  if (missing.providers.every((x) => next[x.id])) onResolved?.()
-                }}
-              />
+              <div key={p.id}>
+                <ProviderRow
+                  provider={p}
+                  onSaved={() => {
+                    const next = { ...saved, [p.id]: true }
+                    setSaved(next)
+                    if (missing.providers.every((x) => next[x.id])) onResolved?.()
+                  }}
+                />
+                {/* Naming only the provider the node defaults to sends someone
+                    to fetch a key they may not need. The three text providers
+                    do the same job, and the node can point at any of them. */}
+                {missing.alternatives?.[p.id]?.length ? (
+                  <p className="mt-1 pl-1 text-[11px] leading-relaxed text-amber-100/60">
+                    Or set this node&apos;s provider to {missing.alternatives[p.id].join(" or ")}, if you
+                    already have one of those.
+                  </p>
+                ) : null}
+              </div>
             ))}
           </div>
 
