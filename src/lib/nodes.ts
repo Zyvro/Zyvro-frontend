@@ -102,10 +102,12 @@ export const BUILT_IN_KINDS: NodeKind[] = [
     type: "generateImage",
     label: "Generate Image",
     category: "AI",
-    description: "Text -> image via Gemini",
+    description: "Text -> image, on Gemini or FLUX",
     inputs: ["text", "image"],
     outputs: ["image"],
-    defaults: { prompt: "", aspectRatio: "1:1" },
+    // provider empty means "whichever backend this account has a key for",
+    // which is what keeps a shared workflow portable between them.
+    defaults: { prompt: "", aspectRatio: "1:1", provider: "", model: "" },
   },
   {
     type: "editImage",
