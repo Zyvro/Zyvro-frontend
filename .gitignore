@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Local environment. NEXT_PUBLIC_API_URL points at whichever backend this
+# machine runs, so it is per-developer rather than shared.
+.env
+.env.local
+.env.*.local
+
+# Editor and OS noise
+.DS_Store
+*.log
+npm-debug.log*
+.vscode/
+.idea/
