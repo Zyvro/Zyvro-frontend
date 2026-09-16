@@ -5,7 +5,7 @@ import { ExternalLink, KeyRound } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useSetSecret } from "@/lib/hooks"
-import type { MissingProviderKeys, ProviderInfo } from "@/lib/api"
+import type { FreeAllowance, MissingProviderKeys, ProviderInfo } from "@/lib/api"
 
 // Shown when a run is refused because the workflow needs a provider account the
 // user has not connected. Workflows always spend the owner's own credits, so
@@ -69,6 +69,38 @@ function ProviderRow({ provider, onSaved }: { provider: ProviderInfo; onSaved: (
   )
 }
 
+// What is left of the free daily allowance, shown on the refusal because that
+// is the moment it matters: somebody who has just been stopped deserves to know
+// they were being carried, by how much, and that it comes back.
+//
+// Nothing is drawn when there is no allowance at all. "0 of 0" reads as a limit
+// somebody imposed rather than as a thing that was never offered.
+const FREE_LABELS: Record<string, string> = { image: "images", text: "model calls" }
+
+function FreeAllowanceBar({ free }: { free?: FreeAllowance[] }) {
+  if (!free?.length) return null
+  return (
+    <ul className="mt-2 space-y-1">
+      {free.map((f) => {
+        const left = Math.max(0, f.allowance - f.used)
+        return (
+          <li key={f.kind} className="flex items-center gap-2 text-[11px] text-amber-100/70">
+            <span className="flex h-1.5 w-16 overflow-hidden rounded-full bg-amber-100/15">
+              <span
+                className="h-full rounded-full bg-amber-300/70"
+                style={{ width: `${Math.round((left / Math.max(1, f.allowance)) * 100)}%` }}
+              />
+            </span>
+            <span>
+              {left} of {f.allowance} free {FREE_LABELS[f.kind] ?? f.kind} left today
+            </span>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 export function MissingKeysPanel({
   missing,
   onResolved,
@@ -95,6 +127,7 @@ export function MissingKeysPanel({
             <div>
               <div className="text-sm font-semibold text-amber-100">{missing.error}</div>
               <p className="mt-1 text-[11px] leading-relaxed text-amber-100/70">{missing.hint}</p>
+              <FreeAllowanceBar free={missing.free} />
             </div>
             {onDismiss && (
               <button onClick={onDismiss} className="text-xs text-amber-100/60 hover:text-amber-100">

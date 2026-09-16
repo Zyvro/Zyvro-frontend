@@ -35,6 +35,19 @@ export type MissingProviderKeys = {
   // id. The three text providers do the same job, so being told to fetch an
   // Ollama key when an OpenAI one is already in hand is a wasted trip.
   alternatives?: Record<string, string[]>
+  // What is left of the free daily allowances, reported only for the kinds the
+  // platform funds. Absent means there is no allowance to speak of, which is
+  // not the same as one that reads zero.
+  free?: FreeAllowance[]
+  // The allowances that would have carried this run if anything were left of
+  // today's. Present means the answer is "come back tomorrow", not "add a key".
+  exhausted?: string[]
+}
+
+export type FreeAllowance = {
+  kind: "image" | "text"
+  used: number
+  allowance: number
 }
 
 // missingProviderKeys returns the payload when an error is that refusal.
