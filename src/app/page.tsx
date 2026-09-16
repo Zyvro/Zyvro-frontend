@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
-import { NODE_KINDS } from "@/lib/nodes"
+import { BUILT_IN_KINDS } from "@/lib/nodes"
 import { categoryMeta, nodeIcon } from "@/components/nodeIcons"
 import { LandingShowcase } from "@/components/LandingShowcase"
 import { cn } from "@/lib/utils"
@@ -77,7 +77,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {NODE_KINDS.map((k) => {
+            {BUILT_IN_KINDS.map((k) => {
               const Icon = nodeIcon(k.type)
               const meta = categoryMeta(k.category)
               return (

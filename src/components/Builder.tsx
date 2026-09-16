@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -51,7 +51,8 @@ import { api, ApiError, ExecutionResponse, Graph, GraphEdge, GraphNode, MissingP
 import {
   inputHandleIds,
   makeNode,
-  NODE_KINDS,
+  getNodeKinds,
+  subscribeNodeKinds,
   nodeKind,
   portOfHandle,
   runtimeInputDefs,
@@ -467,7 +468,10 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
   }
 
   const selectedNode = nodes.find((n) => n.id === selectedId)
-  const filteredKinds = NODE_KINDS.filter((k) => {
+  // The available node set can grow while the editor is open, when a pack is
+  // installed, so it is read from the store rather than captured once.
+  const nodeKinds = useSyncExternalStore(subscribeNodeKinds, getNodeKinds, getNodeKinds)
+  const filteredKinds = nodeKinds.filter((k) => {
     if (palette && palette !== "All" && k.category !== palette) return false
     if (!search) return true
     const q = search.toLowerCase()
@@ -814,6 +818,14 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
                         {k.localOnly && !embedded && (
                           <span className="shrink-0 rounded bg-white/[0.08] px-1 py-px text-[9px] uppercase tracking-wide text-muted-foreground">
                             Desktop
+                          </span>
+                        )}
+                        {k.pack && (
+                          <span
+                            className="shrink-0 rounded bg-violet-400/15 px-1 py-px text-[9px] uppercase tracking-wide text-violet-300"
+                            title={`From the ${k.pack} pack`}
+                          >
+                            {k.pack}
                           </span>
                         )}
                       </span>

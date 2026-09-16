@@ -13,6 +13,10 @@ export type NodeKind = {
   // Tool-only nodes have no data ports: they only expose the tool port that
   // feeds a Brain.
   toolOnly?: boolean
+  // pack names the installed pack a node came from. Absent on built-ins. The
+  // palette shows it, because someone looking at a node that behaves oddly
+  // should be able to see at a glance that it is not one of ours.
+  pack?: string
   // Local-only nodes need a project folder on the machine running the engine,
   // so they work in Zyvro Studio and are refused by the hosted server. The
   // builder still shows them everywhere: seeing that the capability exists is
@@ -45,7 +49,9 @@ export function portOfHandle(handleId: string): PortType {
     : "any"
 }
 
-export const NODE_KINDS: NodeKind[] = [
+// BUILT_IN_KINDS are the nodes the engine implements in Go. They are always
+// present and cannot be shadowed.
+export const BUILT_IN_KINDS: NodeKind[] = [
   {
     type: "textInput",
     label: "Text Input",
@@ -206,8 +212,47 @@ export const NODE_KINDS: NodeKind[] = [
   },
 ]
 
+// Node types are no longer a fixed list. A project can install packs of nodes
+// written in Lua, and those have to appear in the palette and resolve by name
+// exactly like a built-in. So the set lives in a small store the host fills in
+// after it learns what the local engine has loaded.
+//
+// It is a store rather than a plain variable because the palette renders from
+// it: a component has to re-render when a pack is installed, and the project
+// bans useEffect for exactly this kind of subscription.
+
+let pluginKinds: NodeKind[] = []
+let allKinds: NodeKind[] = BUILT_IN_KINDS
+const listeners = new Set<() => void>()
+
+export function subscribeNodeKinds(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+// getNodeKinds returns a cached array, never a fresh one. Rebuilding it on
+// every call would hand React a new value each render and spin it forever.
+export function getNodeKinds(): NodeKind[] {
+  return allKinds
+}
+
+export function registerPluginKinds(kinds: NodeKind[]): void {
+  // A pack may not shadow a built-in. The engine refuses it too, but the
+  // palette must not show a second entry under a name that already means
+  // something, even for the moment before a run fails.
+  const builtIn = new Set(BUILT_IN_KINDS.map((k) => k.type))
+  const seen = new Set<string>()
+  pluginKinds = kinds.filter((k) => {
+    if (builtIn.has(k.type) || seen.has(k.type)) return false
+    seen.add(k.type)
+    return true
+  })
+  allKinds = [...BUILT_IN_KINDS, ...pluginKinds]
+  for (const listener of listeners) listener()
+}
+
 export function nodeKind(type: string): NodeKind | undefined {
-  return NODE_KINDS.find((k) => k.type === type)
+  return allKinds.find((k) => k.type === type)
 }
 
 export function makeNode(kind: NodeKind, x: number, y: number): GraphNode {
