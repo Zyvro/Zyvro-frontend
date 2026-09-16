@@ -22,7 +22,7 @@ type NumField =
 // are driven off one list, so a new field only has to be declared once.
 type NumGroup = "limits" | "auth"
 type BoolField = "analytics_enabled" | "signups_enabled"
-type ModelField = "llm_model" | "small_model" | "image_model" | "vision_model"
+type ModelField = "llm_model" | "small_model" | "image_model" | "vision_model" | "free_model"
 type CatalogKey = "chat" | "image" | "vision"
 // Free-text overrides with no catalog behind them: the live model list only
 // covers Ollama and Google, so Anthropic/OpenAI model ids and the default
@@ -86,6 +86,16 @@ const MODEL_FIELDS: {
   },
   { key: "image_model", label: "Image model", hint: "Generates and edits images.", catalog: "image", effective: "image" },
   { key: "vision_model", label: "Vision model", hint: "Backs the vision/judge node.", catalog: "vision", effective: "vision" },
+  {
+    key: "free_model",
+    label: "Free model",
+    // Spelled out because the trap is invisible: a model that reasons before it
+    // writes spends the whole budget thinking and returns nothing, which costs
+    // us the call and hands the visitor an error.
+    hint: "Backs text nodes on the free daily allowance. Pick one that answers without reasoning first.",
+    catalog: "chat",
+    effective: "free",
+  },
 ]
 
 const CATALOG_PROVIDER_LABEL: Record<CatalogKey, string> = {

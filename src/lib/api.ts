@@ -338,6 +338,10 @@ export type AppSettings = {
   small_model: string
   image_model: string
   vision_model: string
+  // The model a run the platform pays for uses for text. Its own setting
+  // because it answers a different question from llm_model: that one is what a
+  // paying account gets by default, this one is what we are willing to buy.
+  free_model: string
   // Which provider text nodes (llm, brain) use when a node names none, and
   // model overrides for the two non-Ollama text providers. Empty strings mean
   // "use the deployment's environment default".
@@ -367,6 +371,7 @@ export type EffectiveModels = {
   small: string
   image: string
   vision: string
+  free: string
   anthropic: string
   openai: string
   text_provider: string
