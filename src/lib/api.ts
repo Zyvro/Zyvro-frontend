@@ -223,6 +223,22 @@ export const api = {
       method: "PUT",
       body: JSON.stringify({ order }),
     }),
+  // Where a local server is and which model it answers with by default.
+  // Clearing both is how one of these is turned off: they have no key to
+  // delete, so an empty address is the same statement the empty key box makes
+  // for everything else.
+  saveProviderEndpoint: (provider: string, endpoint: { url: string; key?: string; model?: string }) =>
+    request<{ providers: ProviderInfo[] }>(`/api/providers/${provider}/endpoint`, {
+      method: "PUT",
+      body: JSON.stringify(endpoint),
+    }),
+
+  // What a local server says it can run. Asked of the server rather than listed
+  // anywhere, because what is installed is the person's business and changes
+  // whenever they pull something new.
+  listProviderModels: (provider: string) =>
+    request<{ models: string[] }>(`/api/providers/${provider}/models`),
+
   listSecrets: () => request<ProviderSecret[]>("/api/secrets"),
   setSecret: (provider: string, secret: string) =>
     request<{ provider: string; secret_last4: string }>("/api/secrets", {
@@ -705,6 +721,20 @@ export type ProviderInfo = {
   // The text provider a node uses when it names none.
   is_default: boolean
   required: boolean
+  // An endpoint provider is configured by an address and a model rather than by
+  // a key — Ollama on this machine, LM Studio, or any other server speaking the
+  // OpenAI chat API. The panel draws it with two fields and a model list it can
+  // fetch, not a password box.
+  //
+  // Only the desktop ever sets this. A hosted server cannot reach a model on
+  // somebody's laptop, so it does not offer them at all.
+  endpoint?: boolean
+  endpoint_url?: string
+  // Where this one listens when nobody says otherwise, shown as the address
+  // field's placeholder. Empty for a custom endpoint, which is the whole point
+  // of it: we do not know where it is.
+  default_url?: string
+  model?: string
 }
 
 export type ProviderSecret = {

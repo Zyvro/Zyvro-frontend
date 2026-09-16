@@ -2,10 +2,17 @@
 
 import { useState } from "react"
 import * as Dialog from "@radix-ui/react-dialog"
-import { Check, ChevronDown, ChevronUp, ExternalLink, Plus, X } from "lucide-react"
+import { Check, ChevronDown, ChevronUp, ExternalLink, Plus, RefreshCw, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useDeleteSecret, useProviders, useSaveProviderOrder, useSetSecret } from "@/lib/hooks"
+import {
+  useDeleteSecret,
+  useProviderModels,
+  useProviders,
+  useSaveProviderEndpoint,
+  useSaveProviderOrder,
+  useSetSecret,
+} from "@/lib/hooks"
 import type { ProviderInfo } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
@@ -32,7 +39,7 @@ function ProviderIcon({ id }: { id: string }) {
       </svg>
     )
   }
-  if (id === "ollama") {
+  if (id === "ollama" || id === "ollama-local") {
     return (
       <svg viewBox="0 0 24 24" className="h-8 w-8 shrink-0" aria-hidden="true">
         <ellipse cx="12" cy="14.5" rx="7" ry="6" fill="#F5F0E6" />
@@ -175,7 +182,16 @@ function ProviderTile({
           )}
         </div>
         <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-          {provider.has_user_key ? `Your key ••••${provider.user_key_last4}` : provider.purpose}
+          {provider.endpoint
+            ? // An address, not a key. Showing four characters of nothing was
+              // the version of this that said "Your key ••••" under a server
+              // that has no key at all.
+              provider.endpoint_url
+              ? `${provider.endpoint_url}${provider.model ? ` · ${provider.model}` : ""}`
+              : provider.purpose
+            : provider.has_user_key
+              ? `Your key ••••${provider.user_key_last4}`
+              : provider.purpose}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
@@ -229,7 +245,12 @@ function ConfigureDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[30rem] max-w-[92vw] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-white/10 bg-card shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
-          {provider && <DialogBody provider={provider} onClose={onClose} />}
+          {provider &&
+            (provider.endpoint ? (
+              <EndpointBody provider={provider} onClose={onClose} />
+            ) : (
+              <DialogBody provider={provider} onClose={onClose} />
+            ))}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -306,14 +327,16 @@ function DialogBody({ provider, onClose }: { provider: ProviderInfo; onClose: ()
           {provider.setup_hint && (
             <p className="text-[11px] leading-relaxed text-muted-foreground">{provider.setup_hint}</p>
           )}
-          <a
-            href={provider.console_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
-          >
-            Get a key <ExternalLink className="h-3 w-3" />
-          </a>
+          {provider.console_url && (
+            <a
+              href={provider.console_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+            >
+              Get a key <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
         </div>
 
         {error && <p className="text-[11px] text-red-300">{error}</p>}
@@ -338,6 +361,204 @@ function DialogBody({ provider, onClose }: { provider: ProviderInfo; onClose: ()
               </Button>
             ))}
         </div>
+      </div>
+    </div>
+  )
+}
+
+// hostOf is a URL's site, for a link that should read as a place rather than
+// as a sentence. A malformed address falls back to itself, which is still
+// better than an empty link.
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "")
+  } catch {
+    return url
+  }
+}
+
+// EndpointBody configures a server rather than an account: an address, and a
+// model chosen from what that server says it has.
+//
+// Two stages, and deliberately so. The model list can only come from the server
+// once we know where it is, so saving the address is what unlocks the picker —
+// which also means the picker failing is the honest first sign that the address
+// is wrong or that nothing is running there.
+function EndpointBody({ provider, onClose }: { provider: ProviderInfo; onClose: () => void }) {
+  const saveEndpoint = useSaveProviderEndpoint()
+  const [url, setUrl] = useState(provider.endpoint_url ?? "")
+  const [key, setKey] = useState("")
+  const [error, setError] = useState("")
+
+  // Only once there is a saved address to ask. A query fired at a provider the
+  // daemon has never heard of would answer with a failure about configuration,
+  // which is not the message this dialog wants to show before you have typed
+  // anything.
+  const models = useProviderModels(provider.endpoint_url ? provider.id : null)
+  const connected = Boolean(provider.endpoint_url)
+
+  const save = async (next: { url: string; model?: string }) => {
+    setError("")
+    try {
+      await saveEndpoint.mutateAsync({
+        provider: provider.id,
+        url: next.url,
+        key: key.trim() || undefined,
+        model: next.model,
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save the address")
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex items-start gap-3 border-b border-white/[0.06] p-5">
+        <ProviderIcon id={provider.id} />
+        <div className="min-w-0 flex-1">
+          <Dialog.Title className="text-sm font-semibold">{provider.label}</Dialog.Title>
+          <Dialog.Description className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+            {provider.purpose}
+          </Dialog.Description>
+        </div>
+        <Dialog.Close className="text-muted-foreground hover:text-foreground">
+          <X className="h-4 w-4" />
+        </Dialog.Close>
+      </div>
+
+      <div className="space-y-4 p-5">
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            Address
+          </label>
+          <Input
+            placeholder={provider.default_url || provider.key_hint || "http://host:port/v1"}
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void save({ url: url.trim() || provider.default_url || "" })
+            }}
+          />
+          {provider.setup_hint && (
+            <p className="text-[11px] leading-relaxed text-muted-foreground">{provider.setup_hint}</p>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            Key <span className="font-normal normal-case tracking-normal">— only if that server asks for one</span>
+          </label>
+          <Input
+            type="password"
+            autoComplete="new-password"
+            name={`endpoint-key-${provider.id}`}
+            placeholder="Usually empty"
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              Model
+            </label>
+            {connected && (
+              <button
+                type="button"
+                onClick={() => void models.refetch()}
+                className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+              >
+                <RefreshCw className={cn("h-3 w-3", models.isFetching && "animate-spin")} /> Refresh
+              </button>
+            )}
+          </div>
+
+          {!connected ? (
+            <p className="text-[11px] text-muted-foreground">
+              Save the address first — the list of models comes from the server itself.
+            </p>
+          ) : models.isLoading ? (
+            <p className="text-[11px] text-muted-foreground">Asking the server what it can run…</p>
+          ) : models.isError ? (
+            <p className="text-[11px] text-red-300">
+              {models.error instanceof Error ? models.error.message : "That address did not answer."}
+            </p>
+          ) : (models.data?.models.length ?? 0) === 0 ? (
+            <p className="text-[11px] text-muted-foreground">
+              The server answered, but has no models loaded yet.
+            </p>
+          ) : (
+            <div className="zy-scroll max-h-52 space-y-1 overflow-y-auto">
+              {models.data?.models.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => void save({ url: url.trim() || provider.endpoint_url || "", model: m })}
+                  className={cn(
+                    "flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-[12px]",
+                    m === provider.model
+                      ? "border-emerald-400/30 bg-emerald-400/[0.06] text-foreground"
+                      : "border-white/[0.08] text-muted-foreground hover:border-white/25 hover:text-foreground"
+                  )}
+                >
+                  <span className="truncate font-mono">{m}</span>
+                  {m === provider.model && <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400" />}
+                </button>
+              ))}
+            </div>
+          )}
+          {provider.model && (
+            <p className="text-[11px] text-muted-foreground">
+              Nodes that name no model use <span className="font-mono text-foreground">{provider.model}</span>.
+            </p>
+          )}
+        </div>
+
+        {error && <p className="text-[11px] text-red-300">{error}</p>}
+
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <div className="flex gap-2">
+            <Button
+              onClick={() => void save({ url: url.trim() || provider.default_url || "", model: provider.model })}
+              disabled={saveEndpoint.isPending || (!url.trim() && !provider.default_url)}
+            >
+              {saveEndpoint.isPending ? "Saving…" : connected ? "Save address" : "Connect"}
+            </Button>
+            <Button variant="ghost" onClick={onClose}>
+              Done
+            </Button>
+          </div>
+          {connected && (
+            // No key to delete, so clearing the address is how this one is
+            // turned off.
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-destructive"
+              onClick={() => {
+                setUrl("")
+                void save({ url: "", model: "" })
+              }}
+            >
+              Disconnect
+            </Button>
+          )}
+        </div>
+
+        {provider.console_url && (
+          // The site, named by its address. "Get LM Studio (this machine)" was
+          // the version that reused the tile's label, and the label carries a
+          // parenthesis that makes no sense on a link.
+          <a
+            href={provider.console_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+          >
+            {hostOf(provider.console_url)} <ExternalLink className="h-3 w-3" />
+          </a>
+        )}
       </div>
     </div>
   )

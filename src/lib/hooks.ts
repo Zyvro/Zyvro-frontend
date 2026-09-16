@@ -347,6 +347,36 @@ export function useSaveProviderOrder() {
   })
 }
 
+// Saving one local server's address and default model. Same refetch as the
+// order, and for the same reason: the daemon answers with the catalogue it
+// actually kept.
+export function useSaveProviderEndpoint() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ provider, url, key, model }: { provider: string; url: string; key?: string; model?: string }) =>
+      api.saveProviderEndpoint(provider, { url, key, model }),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: qk.providers() })
+      // The address may have changed, and the model list belongs to the address.
+      qc.invalidateQueries({ queryKey: qk.providerModels(variables.provider) })
+    },
+  })
+}
+
+// What a local server can run, asked only while the dialog that shows it is
+// open. Not cached for long: the answer changes the moment somebody pulls a
+// model or loads a different one in LM Studio, and this list is the thing they
+// come back to check.
+export function useProviderModels(provider: string | null) {
+  return useQuery({
+    queryKey: qk.providerModels(provider ?? ""),
+    queryFn: () => api.listProviderModels(provider as string),
+    enabled: provider !== null,
+    staleTime: 5 * 1000,
+    retry: false,
+  })
+}
+
 // ---- Free writing helper ----
 
 // While the helper is on cooldown the quota is polled so the buttons re-enable

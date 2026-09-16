@@ -9,6 +9,7 @@ export const qk = {
   lastExecution: (workflowId: string) => ["executions", "last", workflowId] as const,
   sharedWorkflow: (id: string) => ["workflows", "shared", id] as const,
   providers: () => ["providers"] as const,
+  providerModels: (id: string) => [...qk.providers(), id, "models"] as const,
   aiQuota: () => ["ai", "quota"] as const,
   secrets: () => ["secrets"] as const,
   apiKeys: () => ["apiKeys"] as const,
