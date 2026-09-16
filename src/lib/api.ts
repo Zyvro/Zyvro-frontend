@@ -1,3 +1,5 @@
+import { deriveAuthHash, type KdfParams } from "./kdf"
+
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4102"
 
 // The backend stores media under relative /content/... URLs; resolve them
@@ -72,17 +74,65 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T
 }
 
+// CURRENT_KDF_VERSION is what a new account is created under, and what a legacy
+// one is upgraded to. It has to match the server's KDFVersion; prelogin is what
+// keeps the two honest, since the server names the version for every account.
+const CURRENT_KDF_VERSION = 1
+
+// prelogin asks how to derive for this address. It runs before anything is
+// proved, so it is deliberately uninteresting: it answers the same shape for an
+// address that has never signed up as for one that has.
+async function prelogin(email: string): Promise<KdfParams> {
+  return request<KdfParams>("/api/auth/prelogin", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  })
+}
+
 export const api = {
-  signup: (email: string, password: string, name?: string) =>
-    request<AuthUser>("/api/auth/signup", {
+  // Sign-up and sign-in derive before they send; see lib/kdf.ts. The field is
+  // still called `password` because it keeps its place in the protocol — it is
+  // the thing you send to prove you know the password — but what travels is the
+  // auth hash, and the password itself never leaves this machine.
+  signup: async (email: string, password: string, name?: string) => {
+    const params = await prelogin(email)
+    return request<AuthUser>("/api/auth/signup", {
       method: "POST",
-      body: JSON.stringify({ email, password, name }),
-    }),
-  login: (email: string, password: string) =>
-    request<AuthUser>("/api/auth/login", {
+      body: JSON.stringify({
+        email,
+        password: await deriveAuthHash(password, params),
+        name,
+        kdf_version: params.kdf_version,
+      }),
+    })
+  },
+  login: async (email: string, password: string) => {
+    const params = await prelogin(email)
+    // An account made before this existed still verifies against the password
+    // itself, so that is what it is sent — together with the hash it should
+    // hold instead, which moves it over in the same exchange. After that its
+    // version is 1 and this branch never runs for it again.
+    if (params.kdf_version === 0) {
+      const upgradeParams = { ...params, kdf_version: CURRENT_KDF_VERSION }
+      return request<AuthUser>("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          password,
+          kdf_version: CURRENT_KDF_VERSION,
+          upgrade_hash: await deriveAuthHash(password, upgradeParams),
+        }),
+      })
+    }
+    return request<AuthUser>("/api/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
-    }),
+      body: JSON.stringify({
+        email,
+        password: await deriveAuthHash(password, params),
+        kdf_version: params.kdf_version,
+      }),
+    })
+  },
   logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
   me: () => request<AuthUser>("/api/auth/me"),
 
