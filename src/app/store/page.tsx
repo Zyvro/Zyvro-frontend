@@ -1,11 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import {
   Box,
+  Copy,
   Download,
   Laptop,
   Loader2,
+  LogIn,
   Package,
   SearchIcon,
   ShieldAlert,
@@ -15,7 +18,8 @@ import { AppShell } from "@/components/AppShell"
 import { StoreSource } from "@/components/StoreSource"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { useStorePacks, useStoreTemplates } from "@/lib/storeHooks"
+import { useCopyStoreTemplate, useStorePacks, useStoreTemplates } from "@/lib/storeHooks"
+import { useMe } from "@/lib/hooks"
 import { runsOnline } from "@/lib/storeRules"
 import type { StorePack, StoreTemplate } from "@/lib/api"
 
@@ -92,7 +96,17 @@ function PackCard({ pack }: { pack: StorePack }) {
   )
 }
 
-function TemplateCard({ template }: { template: StoreTemplate }) {
+function TemplateCard({
+  template,
+  signedIn,
+  onCopy,
+  copying,
+}: {
+  template: StoreTemplate
+  signedIn: boolean
+  onCopy: () => void
+  copying: boolean
+}) {
   const runnable = runsOnline(template)
 
   return (
@@ -131,12 +145,32 @@ function TemplateCard({ template }: { template: StoreTemplate }) {
             </p>
           )}
         </div>
+
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <button
+            className="flex items-center gap-1.5 rounded-lg border border-white/[0.1] px-2.5 py-1.5 text-[12px] hover:bg-white/[0.06] disabled:opacity-50"
+            disabled={!signedIn || copying}
+            onClick={onCopy}
+            title={signedIn ? "Make your own editable copy" : "Sign in to copy this"}
+          >
+            {copying ? <Loader2 className="h-3.5 w-3.5 zy-spin" /> : <Copy className="h-3.5 w-3.5" />}
+            Copy
+          </button>
+          {!signedIn && (
+            <a href="/login" className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
+              <LogIn className="h-3 w-3" /> sign in
+            </a>
+          )}
+        </div>
       </div>
     </article>
   )
 }
 
 export default function StorePage() {
+  const router = useRouter()
+  const { data: me } = useMe()
+  const copy = useCopyStoreTemplate()
   const [section, setSection] = useState<Section>("nodes")
   const [query, setQuery] = useState("")
 
@@ -193,6 +227,12 @@ export default function StorePage() {
           </p>
         )}
 
+        {copy.isError && (
+          <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {(copy.error as Error).message}
+          </p>
+        )}
+
         {active.isError && (
           <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {(active.error as Error).message}
@@ -208,7 +248,22 @@ export default function StorePage() {
         <div className="space-y-3">
           {section === "nodes"
             ? (items as StorePack[]).map((p) => <PackCard key={p.id || p.name} pack={p} />)
-            : (items as StoreTemplate[]).map((t) => <TemplateCard key={t.id || t.name} template={t} />)}
+            : (items as StoreTemplate[]).map((t) => (
+                <TemplateCard
+                  key={t.id || t.name}
+                  template={t}
+                  signedIn={Boolean(me)}
+                  copying={copy.isPending && copy.variables === t.name}
+                  onCopy={() =>
+                    copy.mutate(t.name, {
+                      // Straight into the editor: the reason to copy a template
+                      // is to change it, and a copy that lands in a list
+                      // somewhere makes that a second errand.
+                      onSuccess: (created) => router.push(`/builder/${created.id}`),
+                    })
+                  }
+                />
+              ))}
         </div>
 
         <footer className="flex gap-2 rounded-lg border border-amber-400/25 bg-amber-400/[0.06] p-3 text-[12px] leading-relaxed">

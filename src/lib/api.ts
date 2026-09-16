@@ -79,10 +79,10 @@ export const api = {
   // anyone but their owner, so a stale link leaks nothing.
   getSharedWorkflow: (id: string) => request<SharedWorkflow>(`/api/workflows/${id}/shared`),
   getWorkflow: (id: string) => request<Workflow>(`/api/workflows/${id}`),
-  createWorkflow: (name: string, graph?: unknown) =>
+  createWorkflow: (name: string, graph?: unknown, description?: string) =>
     request<Workflow>("/api/workflows", {
       method: "POST",
-      body: JSON.stringify({ name, graph_json: graph ?? { nodes: [], edges: [] } }),
+      body: JSON.stringify({ name, graph_json: graph ?? { nodes: [], edges: [] }, description }),
     }),
   updateWorkflow: (id: string, payload: { name?: string; graph_json?: unknown; description?: string; visibility?: string }) =>
     request<Workflow>(`/api/workflows/${id}`, {
