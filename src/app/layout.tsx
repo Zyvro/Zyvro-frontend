@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { headers } from "next/headers"
 import "./globals.css"
 import { Providers } from "./providers"
 
@@ -23,7 +24,21 @@ export const metadata = {
   },
 }
 
+// Lire un en-tête de requête fait basculer toutes les routes en rendu à la
+// demande, et c'est exprès : une page prérendue est servie depuis le cache
+// sans repasser par le rendu, donc sans que Next puisse y poser le nonce de
+// cette requête-là. L'en-tête porterait alors un nonce que le HTML n'a pas,
+// et la politique bloquerait les scripts de Next — c'est-à-dire l'application
+// entière. Vérifié : sans ceci, la page d'accueil sort avec cinq scripts en
+// ligne et zéro nonce.
+export const dynamic = "force-dynamic"
+
 export default function RootLayout({ children }: { children: ReactNode }) {
+  // La valeur ne sert pas ici : Next lit lui-même le nonce dans l'en-tête de
+  // requête posé par le middleware et l'appose sur ses balises. L'appel est là
+  // pour l'effet de bord ci-dessus.
+  headers()
+
   return (
     <html lang="en" className="dark">
       <body>
