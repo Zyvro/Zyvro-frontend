@@ -1,6 +1,7 @@
 import { deriveAuthHash, type KdfParams } from "./kdf"
+import { API_URL } from "./origin"
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4102"
+export { API_URL }
 
 // The backend stores media under relative /content/... URLs; resolve them
 // against the API origin so <img src> hits the backend, not the frontend.

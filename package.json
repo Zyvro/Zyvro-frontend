@@ -6,7 +6,9 @@
     "dev": "next dev -p 4101",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check:origin": "node scripts/check-build-origin.mjs https://server.zyv.ro",
+    "build:prod": "rm -rf .next && NEXT_PUBLIC_API_URL=https://server.zyv.ro NEXT_PUBLIC_APP_URL=https://zyv.ro next build && npm run check:origin"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.0.5",

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { API_URL } from "@/lib/origin"
 
 // Une Content-Security-Policy à nonce.
 //
@@ -16,10 +17,11 @@ import { NextRequest, NextResponse } from "next/server"
 export function middleware(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64")
 
-  // Là où le front parle vraiment : lui-même, et l'API. Écrit depuis la même
-  // variable que le client, pour qu'un changement d'adresse ne laisse pas la
-  // politique derrière.
-  const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4102"
+  // Là où le front parle vraiment : lui-même, et l'API. Importée depuis la
+  // même déclaration que le client — elle était recopiée ici, et une politique
+  // qui décrit une autre adresse que celle qu'on appelle bloque tout sans rien
+  // dire d'utile.
+  const api = API_URL
 
   const policy = [
     `default-src 'self'`,
