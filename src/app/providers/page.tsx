@@ -93,9 +93,9 @@ export default function ProvidersPage() {
             Providers
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Your workflows run on your own model accounts. Nothing runs on Zyvro&apos;s keys, so whatever a
-            workflow uses, the key has to be here. Keys are encrypted at rest and only ever used server-side to
-            run your own workflows.
+            Your workflows run on your own model accounts, so whatever a workflow uses, the key has to be
+            here. Keys are encrypted at rest and only ever used server-side to run your own workflows. A small
+            daily allowance runs on ours to get you started — see below.
           </p>
         </section>
 
@@ -107,10 +107,14 @@ export default function ProvidersPage() {
         </div>
 
         <section className="rounded-xl border border-white/[0.08] bg-card p-5">
-          <div className="text-sm font-semibold">The one exception</div>
+          <div className="text-sm font-semibold">What runs on our account</div>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            Generate and Synthesize in the publish dialog write a workflow&apos;s description for you. Those run on
-            Zyvro&apos;s own account and are free, once every few minutes. Everything else is yours.
+            Ten images and ten model calls a day, so you can try a workflow before going to find a key. They
+            reset at midnight UTC, and a key of your own removes the limit rather than adding to it.
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            Generate and Synthesize in the publish dialog also write a workflow&apos;s description for you, free,
+            once every few minutes. Everything else is yours.
           </p>
         </section>
 
