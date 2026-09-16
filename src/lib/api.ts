@@ -286,6 +286,9 @@ export type StoreTemplate = {
   // what decides whether this template can run anywhere but a desktop.
   pack_node_types: string[]
   publisher_name?: string
+  // The input/output pair from a real run, copied off the workflow the template
+  // was published from. Absent on a template published from a bare graph.
+  preview?: WorkflowPreview | null
   yanked?: boolean
   created_at: string
 }

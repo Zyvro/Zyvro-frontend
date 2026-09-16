@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   Box,
   Copy,
@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { AppShell } from "@/components/AppShell"
 import { StoreSource } from "@/components/StoreSource"
+import { WorkflowThumb } from "@/components/WorkflowThumb"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { useCopyStoreTemplate, useStorePacks, useStoreTemplates } from "@/lib/storeHooks"
@@ -96,6 +97,37 @@ function PackCard({ pack }: { pack: StorePack }) {
   )
 }
 
+// A template with no picture still needs a card that reads as a card. The
+// listing carries the node types — the graph is stripped from it — so that is
+// what gets shown.
+//
+// Chips, not a chain: node_types is a set, and drawing arrows between its
+// members would promise an order the data does not have.
+function TypeSketch({ types }: { types: string[] }) {
+  const shown = types.slice(0, 5)
+  return (
+    <div
+      className="flex h-28 w-full flex-wrap content-center items-center justify-center gap-1.5 overflow-hidden px-3"
+      style={{
+        backgroundImage: "radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)",
+        backgroundSize: "14px 14px",
+      }}
+    >
+      {shown.map((t) => (
+        <span
+          key={t}
+          className="truncate rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-1 text-[10px] text-muted-foreground"
+        >
+          {t}
+        </span>
+      ))}
+      {types.length > shown.length && (
+        <span className="text-[10px] text-muted-foreground/70">+{types.length - shown.length}</span>
+      )}
+    </div>
+  )
+}
+
 function TemplateCard({
   template,
   signedIn,
@@ -110,43 +142,47 @@ function TemplateCard({
   const runnable = runsOnline(template)
 
   return (
-    <article className="panel p-4">
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.04] text-emerald-300">
-          <WorkflowIcon className="h-4 w-4" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <h2 className="flex flex-wrap items-baseline gap-2">
-            <span className="text-sm font-medium">{template.name}</span>
-            <span className="text-[11px] text-muted-foreground">
-              by {template.publisher_name || "unknown"}
-            </span>
-          </h2>
-          <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">
-            {template.description || "No description."}
+    <article className="panel flex flex-col overflow-hidden">
+      {/* The picture first, the way it is on every other listing of workflows:
+          what went in on the left, what came out on the right. */}
+      <div className="border-b border-white/[0.06]">
+        <WorkflowThumb
+          preview={template.preview}
+          fallback={<TypeSketch types={template.node_types ?? []} />}
+        />
+      </div>
+
+      <div className="flex flex-1 flex-col gap-2 p-4">
+        <h2 className="flex flex-wrap items-baseline gap-2">
+          <span className="text-sm font-medium">{template.name}</span>
+          <span className="text-[11px] text-muted-foreground">
+            v{template.version} · by {template.publisher_name || "unknown"}
+          </span>
+        </h2>
+        <p className="line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
+          {template.description || "No description."}
+        </p>
+
+        {template.requires?.length > 0 && (
+          <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <Download className="h-3 w-3" />
+            needs {template.requires.map((r) => `${r.name}@${r.version}`).join(", ")}
           </p>
+        )}
 
-          {template.requires?.length > 0 && (
-            <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <Download className="h-3 w-3" />
-              needs {template.requires.map((r) => `${r.name}@${r.version}`).join(", ")}
-            </p>
-          )}
+        {/* Saying plainly why something cannot run here is the whole point.
+            A greyed-out button with no explanation reads as a bug. */}
+        {!runnable.online && (
+          <p className="flex items-start gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[11px] leading-relaxed text-muted-foreground">
+            <Laptop className="mt-0.5 h-3 w-3 shrink-0" />
+            <span>
+              Runs in Zyvro Studio, not here: it {runnable.reason}.{" "}
+              <span className="font-mono text-foreground/70">{runnable.nodes.join(", ")}</span>
+            </span>
+          </p>
+        )}
 
-          {/* Saying plainly why something cannot run here is the whole point.
-              A greyed-out button with no explanation reads as a bug. */}
-          {!runnable.online && (
-            <p className="mt-2 flex items-start gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[11px] leading-relaxed text-muted-foreground">
-              <Laptop className="mt-0.5 h-3 w-3 shrink-0" />
-              <span>
-                Runs in Zyvro Studio, not here: it {runnable.reason}.{" "}
-                <span className="font-mono text-foreground/70">{runnable.nodes.join(", ")}</span>
-              </span>
-            </p>
-          )}
-        </div>
-
-        <div className="flex shrink-0 flex-col items-end gap-1">
+        <div className="mt-auto flex items-center gap-2 pt-1">
           <button
             className="flex items-center gap-1.5 rounded-lg border border-white/[0.1] px-2.5 py-1.5 text-[12px] hover:bg-white/[0.06] disabled:opacity-50"
             disabled={!signedIn || copying}
@@ -171,7 +207,13 @@ export default function StorePage() {
   const router = useRouter()
   const { data: me } = useMe()
   const copy = useCopyStoreTemplate()
-  const [section, setSection] = useState<Section>("nodes")
+  // ?tab= décide l'onglet d'arrivée, parce que tout ce qui pointait vers
+  // Explore pointe maintenant ici et doit tomber sur les workflows, pas sur les
+  // nœuds. Lu une fois pour l'état initial : ensuite c'est le clic qui décide.
+  const params = useSearchParams()
+  const [section, setSection] = useState<Section>(
+    params.get("tab") === "workflows" ? "workflows" : "nodes"
+  )
   const [query, setQuery] = useState("")
 
   const packs = useStorePacks(query)
@@ -245,7 +287,11 @@ export default function StorePage() {
           </p>
         )}
 
-        <div className="space-y-3">
+        <div
+          className={cn(
+            section === "nodes" ? "space-y-3" : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          )}
+        >
           {section === "nodes"
             ? (items as StorePack[]).map((p) => <PackCard key={p.id || p.name} pack={p} />)
             : (items as StoreTemplate[]).map((t) => (

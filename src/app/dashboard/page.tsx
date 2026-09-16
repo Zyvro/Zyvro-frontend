@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { ArrowRight, Compass, Layers, Plus } from "lucide-react"
+import { ArrowRight, Layers, Package, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AppShell } from "@/components/AppShell"
 import { WorkflowCard } from "@/components/WorkflowCard"
@@ -81,14 +81,14 @@ export default function DashboardPage() {
         )}
 
         <Link
-          href="/explore"
+          href="/store?tab=workflows"
           className="flex items-center justify-between gap-4 rounded-xl border border-white/[0.08] bg-card px-5 py-4 transition-colors hover:border-white/20"
         >
           <div className="flex items-center gap-3">
-            <Compass className="h-5 w-5 text-muted-foreground" />
+            <Package className="h-5 w-5 text-muted-foreground" />
             <div>
-              <div className="text-sm font-semibold">Browse public workflows</div>
-              <p className="text-xs text-muted-foreground">Copy official templates and workflows shared by the community.</p>
+              <div className="text-sm font-semibold">Browse the store</div>
+              <p className="text-xs text-muted-foreground">Workflows and nodes other people published. Copy one to get your own.</p>
             </div>
           </div>
           <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />

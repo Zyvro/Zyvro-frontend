@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Compass, KeyRound, LayoutGrid, LogOut, MessageSquare, Package, Settings, Shield } from "lucide-react"
+import {  KeyRound, LayoutGrid, LogOut, MessageSquare, Package, Settings, Shield } from "lucide-react"
 import { ChatDock } from "@/components/ChatDock"
 import { useLogout, useMe } from "@/lib/hooks"
 import { cn } from "@/lib/utils"
@@ -17,8 +17,10 @@ export function AppShell({ children, wide }: { children: React.ReactNode; wide?:
 
   const nav = [
     { href: "/dashboard", label: "Workflows", icon: LayoutGrid },
-    { href: "/explore", label: "Explore", icon: Compass },
-  { href: "/store", label: "Store", icon: Package },
+    // Une seule entrée pour « ce que les autres ont publié ». Explore et la
+    // boutique listaient la même chose sous deux noms, et un visiteur devait
+    // deviner lequel des deux regarder.
+    { href: "/store", label: "Store", icon: Package },
     { href: "/chat", label: "Chat", icon: MessageSquare },
     { href: "/providers", label: "Providers", icon: KeyRound },
     { href: "/settings", label: "Settings", icon: Settings },

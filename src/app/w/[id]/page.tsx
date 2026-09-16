@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Compass, LogIn, PenSquare, User } from "lucide-react"
+import { LogIn, Package, PenSquare, User } from "lucide-react"
 import { AppShell } from "@/components/AppShell"
 import { Button } from "@/components/ui/button"
 import { GraphThumb, parseGraph } from "@/components/WorkflowCard"
@@ -44,10 +44,10 @@ function NotShared() {
           The owner may have made it private, or the link may be mistyped.
         </p>
         <Link
-          href="/explore"
+          href="/store?tab=workflows"
           className="mt-5 inline-flex items-center gap-2 text-sm text-primary underline underline-offset-2"
         >
-          <Compass className="h-4 w-4" /> Browse public workflows
+          <Package className="h-4 w-4" /> Browse the store
         </Link>
       </div>
     </Centered>
