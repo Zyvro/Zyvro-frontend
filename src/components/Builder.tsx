@@ -46,7 +46,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ShareDialog } from "@/components/ShareDialog"
 import { useLastExecution, useMe, useUpdateWorkflow, useWorkflow } from "@/lib/hooks"
-import { api, ApiError, ExecutionResponse, Graph, GraphEdge, GraphNode, MissingProviderKeys, QueueInfo, localOnlyNodes,
+import { api, ApiError, ExecutionResponse, Graph, GraphEdge, GraphNode, MissingProviderKeys, QueueInfo, localOnlyNodes, unknownNode,
   missingProviderKeys } from "@/lib/api"
 import {
   inputHandleIds,
@@ -387,11 +387,16 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
       clearQueuedBadges()
       const missing = missingProviderKeys(err)
       const local = localOnlyNodes(err)
+      const unknown = unknownNode(err)
       if (missing) {
         pendingRunRef.current = { nodeId }
         setMissingKeys(missing)
       } else if (local) {
         setRunError(local.hint)
+      } else if (unknown) {
+        // La phrase d'abord, parce qu'elle nomme le nœud et le pack ; le
+        // conseil ensuite, parce qu'il dit quoi faire.
+        setRunError(`${unknown.error}. ${unknown.hint}`)
       } else if (err instanceof ApiError && err.status === 429) {
         setRunError(err.message)
       } else {
@@ -454,11 +459,16 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
       clearQueuedBadges()
       const missing = missingProviderKeys(err)
       const local = localOnlyNodes(err)
+      const unknown = unknownNode(err)
       if (missing) {
         pendingRunRef.current = {}
         setMissingKeys(missing)
       } else if (local) {
         setRunError(local.hint)
+      } else if (unknown) {
+        // La phrase d'abord, parce qu'elle nomme le nœud et le pack ; le
+        // conseil ensuite, parce qu'il dit quoi faire.
+        setRunError(`${unknown.error}. ${unknown.hint}`)
       } else if (err instanceof ApiError && err.status === 429) {
         setRunError(err.message)
       } else {

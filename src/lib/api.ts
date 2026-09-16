@@ -214,6 +214,29 @@ export function localOnlyNodes(err: unknown): LocalOnlyNodes | null {
   return p
 }
 
+// UNKNOWN_NODE is raised when a hosted run names a node this server has no
+// implementation for — in practice a node from a pack, since packs run on the
+// machine their owner controls and never here. Same shape as the refusal
+// above, and for the same reason: the workflow is fine, it is in the wrong
+// place to run.
+export const UNKNOWN_NODE = "unknown_node"
+
+export type UnknownNode = {
+  error: string
+  code: typeof UNKNOWN_NODE
+  hint: string
+  nodes: string[]
+  // Named only when the store knows a pack that defines the node.
+  packs?: string[]
+}
+
+export function unknownNode(err: unknown): UnknownNode | null {
+  if (!(err instanceof ApiError) || err.code !== UNKNOWN_NODE) return null
+  const p = err.payload as UnknownNode | undefined
+  if (!p || !Array.isArray(p.nodes)) return null
+  return p
+}
+
 // ---------------------------------------------------------------------------
 // The store
 //
