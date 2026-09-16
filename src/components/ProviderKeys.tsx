@@ -88,7 +88,7 @@ const CATEGORIES: { role: string; title: string; blurb: string }[] = [
   {
     role: "image",
     title: "Image & vision",
-    blurb: "Needed by every image generation, image editing and vision node.",
+    blurb: "Needed by every image generation, image editing and vision node. These are alternatives — one connected account is enough.",
   },
   {
     role: "text",
