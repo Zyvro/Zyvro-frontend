@@ -177,11 +177,31 @@ export const api = {
     request<Chat>("/api/chats", { method: "POST", body: JSON.stringify({ title: title ?? "" }) }),
   getChat: (id: string) => request<{ chat: Chat; messages: ChatMessage[] }>(`/api/chats/${id}`),
   deleteChat: (id: string) => request<{ ok: boolean }>(`/api/chats/${id}`, { method: "DELETE" }),
-  sendChatMessage: (id: string, content: string) =>
+  sendChatMessage: (id: string, content: string, attachments?: ChatAttachment[]) =>
     request<{ user: ChatMessage; assistant: ChatMessage }>(`/api/chats/${id}/messages`, {
       method: "POST",
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, attachments: attachments ?? [] }),
     }),
+
+  // Images handed to the chat. Multipart rather than base64 in JSON: a 20 MB
+  // image becomes 27 MB of base64, and the browser builds a multipart body for
+  // free. The server answers with the address to send back with the message —
+  // it never takes a path from us.
+  uploadImage: async (file: File): Promise<ChatAttachment & { size: number }> => {
+    const form = new FormData()
+    form.append("file", file)
+    const res = await fetch(`${API_URL}/api/uploads`, {
+      method: "POST",
+      credentials: "include",
+      body: form,
+    })
+    const text = await res.text()
+    const body = text ? (JSON.parse(text) as Record<string, unknown>) : {}
+    if (!res.ok) {
+      throw new ApiError(typeof body.error === "string" ? body.error : `Upload failed (${res.status})`, res.status, body)
+    }
+    return { type: "image", url: String(body.url), name: String(body.name ?? ""), size: Number(body.size ?? 0) }
+  },
 
   // Free, platform-funded writing helper. Rate limited per account and per
   // address, so the caller must check the quota before offering the button.

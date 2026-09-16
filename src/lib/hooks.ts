@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { api, AppSettings } from "./api"
+import { api, AppSettings, type ChatAttachment } from "./api"
 import { qk } from "./qk"
 
 export function useMe() {
@@ -215,7 +215,8 @@ export function useDeleteChat() {
 export function useSendChatMessage() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, content }: { id: string; content: string }) => api.sendChatMessage(id, content),
+    mutationFn: ({ id, content, attachments }: { id: string; content: string; attachments?: ChatAttachment[] }) =>
+      api.sendChatMessage(id, content, attachments),
     onSuccess: (_res, vars) => {
       qc.invalidateQueries({ queryKey: qk.chat(vars.id) })
       qc.invalidateQueries({ queryKey: qk.chats() })

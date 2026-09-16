@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { ArrowUp, Bot, ChevronDown, CircleCheck, CircleX, ExternalLink, Loader2, Sparkles, Workflow } from "lucide-react"
-import { mediaUrl, missingProviderKeys, type ChatMessage, type ChatStep, type MissingProviderKeys } from "@/lib/api"
+import { ArrowUp, Bot, ChevronDown, CircleCheck, CircleX, ExternalLink, Loader2, Paperclip, Sparkles, Workflow, X } from "lucide-react"
+import { api, mediaUrl, missingProviderKeys, type ChatAttachment, type ChatMessage, type ChatStep, type MissingProviderKeys } from "@/lib/api"
 import { MissingKeysPanel } from "@/components/MissingKeysPanel"
 import { useChat, useCreateChat, useMe, useSendChatMessage } from "@/lib/hooks"
 import { cn } from "@/lib/utils"
@@ -29,6 +29,12 @@ export function ChatPanel({
   const createChat = useCreateChat()
   const send = useSendChatMessage()
   const [draft, setDraft] = useState("")
+  // Images already uploaded and waiting to go with the next message. The URL is
+  // the server's own: this never holds a path of its own devising, because the
+  // server only accepts addresses it handed out.
+  const [pending, setPending] = useState<ChatAttachment[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [dropping, setDropping] = useState(false)
   const [error, setError] = useState("")
   // The assistant is itself a workflow, so it runs on the user's own provider
   // account and can be refused for a missing key like any other run.
@@ -62,7 +68,11 @@ export function ChatPanel({
         onChatCreated?.(id)
       }
       setDraft("")
-      await send.mutateAsync({ id, content })
+      const images = pending
+      // The chips clear with the message they went with: they belong to what
+      // was just sent, not to whatever gets typed next.
+      setPending([])
+      await send.mutateAsync({ id, content, attachments: images })
     } catch (e) {
       const missing = missingProviderKeys(e)
       if (missing) {
@@ -71,6 +81,36 @@ export function ChatPanel({
       }
       setError(e instanceof Error ? e.message : "Failed to send")
     }
+  }
+
+  // Three ways in, the same three every chat that takes images offers: paste,
+  // drop, and a button. Paste is the one that matters — a screenshot is usually
+  // the shortest way to say what is wrong — and it is also the one that has to
+  // tell an image on the clipboard from the text beside it.
+  const take = async (files: File[]): Promise<void> => {
+    const images = files.filter((file) => file.type.startsWith("image/"))
+    if (images.length === 0) return
+    setError("")
+    setUploading(true)
+    try {
+      for (const file of images) {
+        const kept = await api.uploadImage(file)
+        setPending((current) => [...current, { type: "image", url: kept.url, name: kept.name }])
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to upload")
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const pick = (): void => {
+    const input = document.createElement("input")
+    input.type = "file"
+    input.accept = "image/png,image/jpeg,image/gif,image/webp"
+    input.multiple = true
+    input.onchange = () => void take([...(input.files ?? [])])
+    input.click()
   }
 
   const defaultSuggestions = suggestions || [
@@ -108,7 +148,57 @@ export function ChatPanel({
             />
           )}
           {error && <div className="mb-2 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">{error}</div>}
-          <div className="panel flex items-end gap-2 rounded-2xl p-2 pl-4 focus-within:border-primary/60">
+          {pending.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {pending.map((image) => (
+                <span
+                  key={image.url}
+                  className="group flex max-w-[16rem] items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] py-1 pl-1 pr-2 text-xs text-muted-foreground"
+                  title={image.name}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={image.url} alt="" className="h-6 w-6 shrink-0 rounded object-cover" />
+                  <span className="truncate">{image.name}</span>
+                  <button
+                    type="button"
+                    title="Remove"
+                    className="shrink-0 rounded p-0.5 hover:bg-white/[0.1] hover:text-foreground"
+                    onClick={() => setPending((current) => current.filter((i) => i.url !== image.url))}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div
+            className={cn(
+              "panel flex items-end gap-2 rounded-2xl p-2 pl-2 focus-within:border-primary/60",
+              dropping && "border-primary/60 bg-primary/[0.06]"
+            )}
+            onDragOver={(e) => {
+              if (![...e.dataTransfer.types].includes("Files")) return
+              e.preventDefault()
+              setDropping(true)
+            }}
+            onDragLeave={() => setDropping(false)}
+            onDrop={(e) => {
+              if (![...e.dataTransfer.types].includes("Files")) return
+              e.preventDefault()
+              setDropping(false)
+              void take([...e.dataTransfer.files])
+            }}
+          >
+            <button
+              type="button"
+              title="Attach an image"
+              onClick={pick}
+              disabled={uploading}
+              className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-white/[0.06] hover:text-foreground disabled:opacity-40"
+            >
+              {uploading ? <Loader2 className="h-4 w-4 zy-spin" /> : <Paperclip className="h-4 w-4" />}
+            </button>
             <textarea
               ref={inputRef}
               rows={1}
@@ -125,11 +215,20 @@ export function ChatPanel({
                   void submit()
                 }
               }}
+              onPaste={(e) => {
+                const files = [...e.clipboardData.files]
+                // Only when there really is an image: a paste of ordinary text
+                // also carries an empty file list, and swallowing the event
+                // would stop text pasting.
+                if (!files.some((file) => file.type.startsWith("image/"))) return
+                e.preventDefault()
+                void take(files)
+              }}
               className="max-h-40 min-h-[24px] flex-1 resize-none bg-transparent py-1.5 text-sm leading-relaxed outline-none placeholder:text-muted-foreground/70"
             />
             <button
               onClick={() => void submit()}
-              disabled={busy || !draft.trim()}
+              disabled={busy || uploading || (!draft.trim() && pending.length === 0)}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.4),0_4px_16px_hsl(var(--primary)/0.35)] transition-opacity disabled:opacity-40"
               title="Send"
             >
@@ -175,10 +274,27 @@ function EmptyState({ compact, suggestions, onPick }: { compact?: boolean; sugge
 function MessageRow({ message, compact, initial }: { message: ChatMessage; compact?: boolean; initial: string }) {
   const isUser = message.role === "user"
   if (isUser) {
+    const sent = message.attachments || []
     return (
       <div className="flex justify-end gap-3">
-        <div className={cn("max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-white/[0.07] px-4 py-2.5 text-sm leading-relaxed", compact && "text-[13px]")}>
-          {message.content}
+        <div className={cn("max-w-[85%] space-y-2 rounded-2xl rounded-br-md bg-white/[0.07] px-4 py-2.5 text-sm leading-relaxed", compact && "text-[13px]")}>
+          {/* What was sent, shown as it was sent. A message that says "what is
+              wrong with this?" and shows nothing is a message nobody can read
+              back later. */}
+          {sent.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {sent.map((att) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={att.url}
+                  src={mediaUrl(att.url)}
+                  alt={att.name || "attached image"}
+                  className="max-h-40 rounded-lg border border-white/[0.08] object-contain"
+                />
+              ))}
+            </div>
+          )}
+          {message.content && <p className="whitespace-pre-wrap">{message.content}</p>}
         </div>
         {!compact && (
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-xs font-semibold text-muted-foreground">
