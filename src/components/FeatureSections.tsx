@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
+import { ModeShowcase } from "@/components/ModeShowcase"
 import { cn } from "@/lib/utils"
 
 // Ce que fait le produit, montré plutôt que listé.
@@ -155,6 +156,12 @@ export function FeatureSections() {
           />
         </div>
       </section>
+
+      {/* Juste après le canvas, parce que c'est la deuxième chose qu'on ne
+          voyait pas : ce qu'on télécharge est un éditeur, et il a deux
+          dispositions. Le reste de la page montre des panneaux ; celle-ci
+          montre la fenêtre. */}
+      <ModeShowcase />
 
       {FEATURES.map((f) => (
         <section key={f.title} className="mx-auto max-w-6xl px-6">
