@@ -26,6 +26,12 @@ type Feature = {
   /** L'image à droite plutôt qu'à gauche. On alterne, sinon la page défile en
    *  colonne et rien n'accroche l'œil. */
   flip?: boolean
+  /** Toute la largeur, titre au-dessus.
+   *
+   *  Pour ce qui ne se lit pas en demi-page : une fenêtre entière, un terminal.
+   *  Réduite à 500 points, une capture de l'IDE devient une vignette grise —
+   *  on voit qu'il y a quelque chose, on ne voit pas quoi. */
+  wide?: boolean
   link?: { href: string; label: string }
 }
 
@@ -50,15 +56,67 @@ const FEATURES: Feature[] = [
     shot: { src: "/shots/agent.png", alt: "The agent panel, running the CLI installed on this machine", width: 720, height: 1664 },
   },
   {
-    eyebrow: "The store",
-    title: "Start from one that already ran.",
+    eyebrow: "Permissions",
+    title: "You decide what it may do.",
     body:
-      "Workflows other people published, each shown as what went in and what came out — because a name and a description " +
-      "do not tell you whether it does what you want. Installing pulls the node packs it needs. They run on your machine, " +
-      "in the sandbox, and you can read the source before installing anything.",
-    shot: { src: "/shots/store.png", alt: "The store: published workflows, each with its input and its result", width: 1440, height: 760 },
-    link: { href: "/store", label: "Browse the store" },
+      "Per conversation, next to what you are about to ask. Workspace, and it works in the project without asking. Ask, " +
+      "and every action arrives with its command or its path, to allow or deny. Read only, and it looks without touching. " +
+      "YOLO, if you mean it.",
+    shot: {
+      src: "/shots/permissions.png",
+      alt: "The four permission levels in the agent composer: Workspace, Ask, Read only, YOLO",
+      width: 760,
+      height: 640,
+    },
+    narrow: true,
     flip: true,
+  },
+  {
+    eyebrow: "Agent tools",
+    title: "Every shell hands over the project.",
+    body:
+      "Open a terminal and it already knows where this project's engine listens and what opens it: the addresses, the " +
+      "tokens, a ready-made mcp.json for any client, and a zyvro-mcp command that starts claude or codex already wired in. " +
+      "The port and the token change at every start — nobody should have to go looking for them.",
+    shot: {
+      src: "/shots/mcp-shell.png",
+      alt: "A shell in the IDE listing the project's MCP servers, their addresses and the config file",
+      width: 1520,
+      height: 450,
+    },
+    wide: true,
+  },
+  {
+    eyebrow: "The browser",
+    title: "It has its own. Yours keeps its tabs.",
+    body:
+      "A page inside the IDE, in a session of its own. An agent opens it, reads what is on it, clicks, types, waits for a " +
+      "text to appear and photographs it — without touching the browser where you are signed in to everything. Right-click " +
+      "and Chromium's own devtools open under the page: Elements, Console, Network, Application. It is Chromium, because " +
+      "the app is.",
+    shot: {
+      src: "/shots/browser.png",
+      alt: "Two pages open in the IDE's own browser, listed in the sidebar, with the address bar and the shell below",
+      width: 2160,
+      height: 1350,
+    },
+    wide: true,
+  },
+  {
+    eyebrow: "Inline completion",
+    title: "Grey text, from a model you chose.",
+    body:
+      "Ghost text in the editor, from a provider you picked for that job — and it is a list of its own, because the models " +
+      "that fill in the middle of a file are not the ones that chat. It waits for a pause before asking and drops the " +
+      "request the moment you type again, so a suggestion that arrived late never lands on a cursor that moved. Off until " +
+      "you turn it on: every pause spends an account.",
+    shot: {
+      src: "/shots/completion.png",
+      alt: "The code completion providers in the desktop settings, separate from text generation",
+      width: 1480,
+      height: 620,
+    },
+    wide: true,
   },
   {
     eyebrow: "Source control",
@@ -69,6 +127,17 @@ const FEATURES: Feature[] = [
       "in the same folder shows cannot disagree.",
     shot: { src: "/shots/git.png", alt: "The source control panel: a commit message, and the changed files", width: 520, height: 520 },
     narrow: true,
+  },
+  {
+    eyebrow: "The store",
+    title: "Start from one that already ran.",
+    body:
+      "Workflows other people published, each shown as what went in and what came out — because a name and a description " +
+      "do not tell you whether it does what you want. Installing pulls the node packs it needs. They run on your machine, " +
+      "in the sandbox, and you can read the source before installing anything.",
+    shot: { src: "/shots/store.png", alt: "The store: published workflows, each with its input and its result", width: 1440, height: 760 },
+    link: { href: "/store", label: "Browse the store" },
+    flip: true,
   },
 ]
 
@@ -163,7 +232,19 @@ export function FeatureSections() {
           montre la fenêtre. */}
       <ModeShowcase />
 
-      {FEATURES.map((f) => (
+      {FEATURES.map((f) =>
+        f.wide ? (
+          <section key={f.title} className="mx-auto max-w-6xl px-6 text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/90">{f.eyebrow}</p>
+            <h2 className="mx-auto mt-4 max-w-3xl text-3xl font-semibold leading-[1.12] tracking-tight sm:text-[2.75rem]">
+              {f.title}
+            </h2>
+            <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">{f.body}</p>
+            <div className="mt-12">
+              <Shot feature={f} />
+            </div>
+          </section>
+        ) : (
         <section key={f.title} className="mx-auto max-w-6xl px-6">
           <div
             className={cn(
@@ -190,7 +271,8 @@ export function FeatureSections() {
             <Shot feature={f} cap />
           </div>
         </section>
-      ))}
+        )
+      )}
     </div>
   )
 }
