@@ -177,10 +177,12 @@ const FEATURES: Feature[] = [
       "Zyvro account and copies a public link. That is the whole gesture behind “look at this”, whether it is the thing " +
       "you just built or the error you cannot explain.",
     shot: {
-      src: "/shots/share.png",
-      alt: "The captured agent panel in a dialog over the IDE, offering Download or Share a link",
-      width: 2880,
-      height: 1800,
+      src: "/shots/share.gif",
+      alt:
+        "The whole gesture: the panels outline themselves, one is picked, the image appears in a dialog, and the link " +
+        "is copied",
+      width: 1200,
+      height: 750,
     },
     wide: true,
   },
