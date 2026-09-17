@@ -732,7 +732,10 @@ export type ProviderInfo = {
   // The jobs this provider can do. More than one, because Google generates
   // images and reads them, and Ollama writes text and reads images — which is
   // why "Image & vision" was one heading and should not have been.
-  roles: ("text" | "image" | "vision")[]
+  // « completion » est arrivée en quatrième : compléter du code n'est pas une
+  // variante de la génération de texte — la route est différente, et les
+  // modèles qui la servent ne sont pas les mêmes.
+  roles: ("text" | "image" | "vision" | "completion")[]
   // The text provider a node uses when it names none.
   is_default: boolean
   required: boolean

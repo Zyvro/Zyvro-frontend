@@ -125,13 +125,21 @@ const CATEGORIES: { role: Role; title: string; blurb: string }[] = [
     blurb: "Backs vision nodes and lets the chat assistant look at an image you attach. These are alternatives — one connected account is enough.",
   },
   {
+    role: "completion",
+    title: "Code completion",
+    blurb:
+      "Backs the inline suggestions in the editor. Not the same list as text generation: completing code is a different " +
+      "call, and a chat model answers a sentence where the editor wants three characters. A model on this machine is " +
+      "usually the right one — a suggestion has to come back in the time it takes to keep typing.",
+  },
+  {
     role: "text",
     title: "Text generation",
     blurb: "Backs text nodes and the Brain agent. These are alternatives — one connected account is enough.",
   },
 ]
 
-type Role = "text" | "image" | "vision"
+type Role = "text" | "image" | "vision" | "completion"
 
 function StatusBadge({ provider }: { provider: ProviderInfo }) {
   if (provider.has_user_key) {
@@ -640,7 +648,7 @@ export function ProviderKeys({ compact = false }: { compact?: boolean }) {
         const orderable = list.filter((p) => p.has_user_key).length > 1
 
         return (
-          <section key={cat.role}>
+          <section key={cat.role} className="zy-cards-scope">
             <div className="mb-2">
               <div className="text-sm font-semibold">{cat.title}</div>
               <p className="text-[11px] text-muted-foreground">{cat.blurb}</p>
@@ -650,7 +658,9 @@ export function ProviderKeys({ compact = false }: { compact?: boolean }) {
                 </p>
               )}
             </div>
-            <div className={compact ? "grid grid-cols-1 gap-2" : "grid grid-cols-1 gap-2 md:grid-cols-2"}>
+            {/* Deux colonnes seulement si le panneau est large, pas si la
+                fenêtre l'est : voir .zy-cards dans globals.css. */}
+            <div className={cn("zy-cards", compact && "!grid-cols-1")}>
               {list.map((p, index) => (
                 <ProviderTile
                   key={p.id}

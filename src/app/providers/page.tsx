@@ -39,6 +39,11 @@ function Summary() {
   // One line per job that nothing covers, naming what would cover it. Listing
   // each unconfigured provider instead would read as a shopping list when any
   // one of them is enough.
+  //
+  // Code completion is deliberately absent from this list, and not forgotten:
+  // it is an editor comfort that ships switched off, and no workflow fails
+  // without it. Nagging about it here would push somebody to configure
+  // something they never asked for.
   const todo: string[] = []
   for (const [role, label] of [
     ["image", "image generation"],

@@ -296,3 +296,30 @@
 .zy-spin {
   animation: zy-spin 1s linear infinite;
 }
+
+/* Les tuiles de fournisseurs s'arrangent selon la largeur de leur panneau, pas
+   selon celle de la fenêtre.
+   
+   C'est la même liste dans deux endroits très différents : une page web large,
+   et un panneau du desktop qui fait parfois 340 points. Une grille réglée sur
+   la fenêtre y mettait deux colonnes quand même, et il restait cent cinquante
+   points pour le texte — le nom passait sur trois lignes et la description se
+   coupait après deux mots.
+   
+   `@container` est natif dans les navigateurs depuis 2022 ; il n'y avait pas de
+   raison d'ajouter une dépendance pour six lignes. */
+.zy-cards-scope {
+  container-type: inline-size;
+}
+
+.zy-cards {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 1fr;
+}
+
+@container (min-width: 44rem) {
+  .zy-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
