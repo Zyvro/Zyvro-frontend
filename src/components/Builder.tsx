@@ -597,8 +597,15 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
         </ReactFlow>
 
         {/* Top bar */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-3 p-3">
-          <div className="pointer-events-auto flex items-center gap-2">
+        {/* La barre du haut, et la raison de tous les `min-w-0` qui suivent.
+            Une erreur d'exécution s'affiche à gauche des boutons, dans la même
+            rangée. Sans rien qui cède, la rangée s'allonge au-delà de la
+            fenêtre et pousse « Run Workflow » hors de l'écran — au moment
+            précis où on veut le reprendre. Ce qui cède, c'est le texte de
+            l'erreur, qui se tronque déjà ; ce qui ne cède jamais, ce sont les
+            boutons. */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex min-w-0 items-start justify-between gap-3 p-3">
+          <div className="pointer-events-auto flex min-w-0 items-center gap-2">
             <div className="panel flex h-11 items-center gap-2 pl-3 pr-2">
               <input
                 className="w-64 bg-transparent text-[15px] font-medium outline-none placeholder:text-muted-foreground"
@@ -635,24 +642,30 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
             </div>
           </div>
 
-          <div className="pointer-events-auto flex items-center gap-2">
+          <div className="pointer-events-auto flex min-w-0 items-center gap-2">
             {runError && (
-              <div className="panel flex h-11 max-w-sm items-center gap-2 px-3 text-xs text-red-300">
+              <div
+                className="panel flex h-11 min-w-0 max-w-sm shrink items-center gap-2 px-3 text-xs text-red-300"
+                title={runError}
+              >
                 <span className="truncate">{runError}</span>
-                <button onClick={() => setRunError("")} className="text-muted-foreground hover:text-foreground">
+                <button
+                  onClick={() => setRunError("")}
+                  className="shrink-0 text-muted-foreground hover:text-foreground"
+                >
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
             )}
             {!runError && executionDone && (
-              <div className="panel flex h-11 items-center px-3 text-xs text-emerald-300">Run completed</div>
+              <div className="panel flex h-11 shrink-0 items-center px-3 text-xs text-emerald-300">Run completed</div>
             )}
             {!runError && executionCancelled && (
-              <div className="panel flex h-11 items-center px-3 text-xs text-muted-foreground">Run cancelled</div>
+              <div className="panel flex h-11 shrink-0 items-center px-3 text-xs text-muted-foreground">Run cancelled</div>
             )}
             {!runError && isQueued && (
-              <div className="panel flex h-11 items-center gap-2 px-3 text-xs text-amber-300">
-                <Hourglass className="h-3.5 w-3.5" />
+              <div className="panel flex h-11 min-w-0 shrink items-center gap-2 px-3 text-xs text-amber-300">
+                <Hourglass className="h-3.5 w-3.5 shrink-0" />
                 <span>
                   Queued, position {queueInfo!.position} of {queueInfo!.waiting}
                   {queueInfo!.avg_wait_ms > 0 && <> · recent runs waited {formatWaitEstimate(queueInfo!.avg_wait_ms)}</>}
@@ -663,7 +676,7 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
               <Button
                 size="lg"
                 variant="outline"
-                className="h-11 px-4"
+                className="h-11 shrink-0 px-4"
                 onClick={() => {
                   setShareTab("share")
                   setShareOpen(true)
@@ -678,14 +691,14 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
               variant="outline"
               onClick={onRun}
               disabled={running}
-              className="h-11 px-5 border-primary/45 bg-primary/[0.06] text-foreground/90 hover:bg-primary/15 hover:text-foreground"
+              className="h-11 shrink-0 px-5 border-primary/45 bg-primary/[0.06] text-foreground/90 hover:bg-primary/15 hover:text-foreground"
             >
               {running ? isQueued ? <Hourglass className="h-4 w-4" /> : <Loader2 className="zy-spin" /> : <ArrowRight />}
               {running ? (isQueued ? "Queued…" : "Running…") : "Run Workflow"}
             </Button>
 
             {workflow && !embedded && (
-              <div className="relative">
+              <div className="relative shrink-0">
                 <div className="flex h-11 overflow-hidden rounded-lg shadow-[0_0_0_1px_hsl(var(--primary)/0.4),0_4px_16px_hsl(var(--primary)/0.35)]">
                   <button
                     className="flex items-center gap-2 bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
