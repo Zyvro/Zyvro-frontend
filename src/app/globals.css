@@ -29,6 +29,7 @@
   /* Port colors (edges + handles share them) */
   --port-text: 262 83% 68%;
   --port-image: 172 66% 50%;
+  --port-video: 200 90% 60%;
   --port-json: 38 92% 55%;
   --port-any: 240 5% 58%;
   --port-tool: 350 89% 60%;
@@ -235,6 +236,7 @@
 }
 .port-label-text { color: hsl(var(--port-text)); }
 .port-label-image { color: hsl(var(--port-image)); }
+.port-label-video { color: hsl(var(--port-video)); }
 .port-label-json { color: hsl(var(--port-json)); }
 .port-label-tool { color: hsl(var(--port-tool)); }
 .react-flow .react-flow__handle-port-text {
@@ -248,6 +250,12 @@
 }
 .react-flow .react-flow__handle-port-image:hover {
   background: hsl(var(--port-image)) !important;
+}
+.react-flow .react-flow__handle-port-video {
+  border-color: hsl(var(--port-video)) !important;
+}
+.react-flow .react-flow__handle-port-video:hover {
+  background: hsl(var(--port-video)) !important;
 }
 .react-flow .react-flow__handle-port-json {
   border-color: hsl(var(--port-json)) !important;

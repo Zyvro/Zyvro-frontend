@@ -735,7 +735,13 @@ export type ProviderInfo = {
   // « completion » est arrivée en quatrième : compléter du code n'est pas une
   // variante de la génération de texte — la route est différente, et les
   // modèles qui la servent ne sont pas les mêmes.
-  roles: ("text" | "image" | "vision" | "completion")[]
+  //
+  // « video » est la cinquième, et elle n'est pas non plus une variante de
+  // l'image : le même fournisseur peut faire les deux, mais la facture se
+  // compte à la seconde et le rendu prend une minute. Quelqu'un qui veut
+  // facturer ses vidéos ailleurs que ses images le peut, et personne n'a à
+  // deviner que la clé image sert aussi à ça.
+  roles: ("text" | "image" | "video" | "vision" | "completion")[]
   // The text provider a node uses when it names none.
   is_default: boolean
   required: boolean

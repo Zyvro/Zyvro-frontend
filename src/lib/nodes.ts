@@ -1,6 +1,6 @@
 import type { GraphEdge, GraphNode } from "./api"
 
-export type PortType = "text" | "image" | "json" | "any"
+export type PortType = "text" | "image" | "video" | "json" | "any"
 
 export type NodeKind = {
   type: string
@@ -44,7 +44,7 @@ export function inputHandleIds(kind: NodeKind): string[] {
 // Port type encoded in an input handle id ("text" -> "text", "any:1" -> "any").
 export function portOfHandle(handleId: string): PortType {
   const base = handleId.split(":")[0]
-  return (["text", "image", "json", "any"] as PortType[]).includes(base as PortType)
+  return (["text", "image", "video", "json", "any"] as PortType[]).includes(base as PortType)
     ? (base as PortType)
     : "any"
 }
@@ -108,6 +108,18 @@ export const BUILT_IN_KINDS: NodeKind[] = [
     // provider empty means "whichever backend this account has a key for",
     // which is what keeps a shared workflow portable between them.
     defaults: { prompt: "", aspectRatio: "1:1", provider: "", model: "" },
+  },
+  {
+    type: "generateVideo",
+    label: "Generate Video",
+    category: "AI",
+    description: "Text -> video, on Veo or FLUX",
+    inputs: ["text", "image"],
+    outputs: ["video"],
+    // resolution and duration are on the node rather than in a deployment
+    // default because they are what decides the bill: both backends charge by
+    // the second, and the price per second triples between hd and uhd.
+    defaults: { prompt: "", provider: "", model: "", resolution: "", duration: 0, aspectRatio: "", draft: false },
   },
   {
     type: "editImage",

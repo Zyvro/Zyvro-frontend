@@ -1080,6 +1080,7 @@ function toFlowNode(n: GraphNode): Node {
 const PORT_COLORS: Record<PortType | "tool", string> = {
   text: "hsl(262 83% 68%)",
   image: "hsl(172 66% 50%)",
+  video: "hsl(200 90% 60%)",
   json: "hsl(38 92% 55%)",
   any: "hsl(240 5% 58%)",
   tool: "hsl(350 89% 60%)",
@@ -1691,6 +1692,47 @@ const CONFIG_FIELDS: Record<string, ConfigField[]> = {
   generateImage: [
     { key: "prompt", label: "Prompt (overrides input)", type: "textarea" },
     { key: "aspectRatio", label: "Aspect ratio", type: "aspectRatio", options: ["1:1", "16:9", "9:16", "4:3", "3:4"], default: "1:1" },
+  ],
+  // La vidéo est le seul nœud facturé à la seconde, et le prix par seconde
+  // triple entre la HD et l'UHD. Les deux réglages qui décident de la facture
+  // sont donc ici, visibles, plutôt que dans un défaut de déploiement que
+  // personne ne relit.
+  generateVideo: [
+    { key: "prompt", label: "Prompt (overrides input)", type: "textarea" },
+    {
+      key: "provider",
+      label: "Provider",
+      type: "select",
+      options: ["", "google", "bfl"],
+      optionLabels: { "": "Whichever key this project has", google: "Veo (Google)", bfl: "FLUX (Black Forest Labs)" },
+    },
+    { key: "model", label: "Model", type: "text", placeholder: "Leave empty for the backend's own" },
+    {
+      key: "resolution",
+      label: "Resolution",
+      type: "select",
+      options: ["", "hd", "fhd", "qhd", "uhd"],
+      optionLabels: {
+        "": "The backend's own (hd)",
+        hd: "HD — 720p",
+        fhd: "FHD — 1080p",
+        qhd: "QHD — 1440p (FLUX only)",
+        uhd: "UHD — 4K",
+      },
+    },
+    // Zéro veut dire « celle du dos » : auto chez FLUX, huit secondes chez Veo.
+    // FLUX prend 5 à 20 secondes entières, Veo prend 4, 6 ou 8.
+    { key: "duration", label: "Seconds (0 = the backend's own)", type: "number", default: 0, step: "1" },
+    {
+      key: "aspectRatio",
+      label: "Aspect ratio",
+      type: "select",
+      options: ["", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9", "2:1"],
+      optionLabels: { "": "The backend's own", "1:1": "1:1 (FLUX only)", "4:3": "4:3 (FLUX only)", "3:4": "3:4 (FLUX only)", "21:9": "21:9 (FLUX only)", "2:1": "2:1 (FLUX only)" },
+    },
+    // Le passage à bas prix : un tiers du tarif, HD seulement, pour savoir si
+    // la description est la bonne avant de payer la vraie.
+    { key: "draft", label: "Draft — cheaper, HD, FLUX only", type: "checkbox", default: false },
   ],
   editImage: [{ key: "prompt", label: "Edit instruction", type: "textarea" }],
   removeBackground: [

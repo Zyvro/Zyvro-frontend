@@ -68,6 +68,7 @@ const INLINE_FIELD: Record<string, { key: string; label: string; placeholder: st
   textInput: { key: "value", label: "Prompt", placeholder: "Enter text, or leave empty and pass it at run time…" },
   llm: { key: "prompt", label: "Prompt", placeholder: "Uses upstream text, or write a prompt override…" },
   generateImage: { key: "prompt", label: "Prompt", placeholder: "Uses upstream text, or write a prompt override…" },
+  generateVideo: { key: "prompt", label: "Prompt", placeholder: "Uses upstream text, or describe the shot…" },
   editImage: { key: "prompt", label: "Instruction", placeholder: "Describe the edit…" },
   vision: { key: "instruction", label: "Instruction", placeholder: "What should the model look for?" },
   brain: { key: "goal", label: "Goal", placeholder: "Uses upstream text, or write a goal override…" },
@@ -97,7 +98,23 @@ export type ZynodeProps = NodeProps & {
   }
 }
 
-function MediaFrame({ src, transparent, filename }: { src: string; transparent?: boolean; filename?: string }) {
+// MediaFrame montre ce qu'un nœud a produit : une image, ou un plan.
+//
+// `video` est passé plutôt que deviné de l'adresse. L'extension d'un fichier
+// servi par le magasin est une convention, pas une garantie, et se tromper ici
+// se voit tout de suite — une balise <img> sur un mp4 ne montre rien du tout,
+// sans dire pourquoi.
+function MediaFrame({
+  src,
+  transparent,
+  filename,
+  video,
+}: {
+  src: string
+  transparent?: boolean
+  filename?: string
+  video?: boolean
+}) {
   const resolved = mediaUrl(src)
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null)
 
@@ -122,16 +139,36 @@ function MediaFrame({ src, transparent, filename }: { src: string; transparent?:
   return (
     <div className="group/img relative mt-2 overflow-hidden rounded-lg border border-white/[0.06]" onClick={(e) => e.stopPropagation()}>
       <div className={cn(transparent ? "checker" : "bg-black/40")}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={resolved}
-          alt="preview"
-          className="block w-full max-h-64 object-contain nodrag"
-          onLoad={(e) => {
-            const img = e.currentTarget
-            if (img.naturalWidth > 0) setDims({ w: img.naturalWidth, h: img.naturalHeight })
-          }}
-        />
+        {video ? (
+          // Muet et en boucle : un plan de cinq secondes dans un nœud est une
+          // vignette qui bouge, et une bande-son qui part toute seule au milieu
+          // d'un canevas ouvert depuis dix minutes est une mauvaise surprise.
+          // Les contrôles restent, pour le son et pour la barre de lecture.
+          <video
+            src={resolved}
+            className="block w-full max-h-64 object-contain nodrag"
+            controls
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            onLoadedMetadata={(e) => {
+              const el = e.currentTarget
+              if (el.videoWidth > 0) setDims({ w: el.videoWidth, h: el.videoHeight })
+            }}
+          />
+        ) : (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={resolved}
+            alt="preview"
+            className="block w-full max-h-64 object-contain nodrag"
+            onLoad={(e) => {
+              const img = e.currentTarget
+              if (img.naturalWidth > 0) setDims({ w: img.naturalWidth, h: img.naturalHeight })
+            }}
+          />
+        )}
       </div>
       {dims && (
         <span className="absolute right-1.5 bottom-1.5 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[9px] font-medium text-white/90 opacity-0 transition-opacity group-hover/img:opacity-100">
@@ -382,6 +419,7 @@ export function Zynode({ id, data, selected }: ZynodeProps) {
         {data._previewUrl && (
           <MediaFrame
             src={data._previewUrl}
+            video={data._output?.type === "video"}
             transparent={nodeType === "removeBackground" || nodeType === "preview" || nodeType === "output"}
             filename={String(data.label || nodeType || "image").replace(/[^\w-]+/g, "-").toLowerCase()}
           />

@@ -120,6 +120,14 @@ const CATEGORIES: { role: Role; title: string; blurb: string }[] = [
     blurb: "Backs image generation and editing nodes. These are alternatives — one connected account is enough.",
   },
   {
+    role: "video",
+    title: "Video generation",
+    blurb:
+      "Backs the video node, on Veo or on FLUX. These are alternatives — one connected account is enough. Unlike the " +
+      "rest, video is billed by the second and the price per second climbs with the resolution, so the node asks for " +
+      "both rather than choosing for you.",
+  },
+  {
     role: "vision",
     title: "Vision",
     blurb: "Backs vision nodes and lets the chat assistant look at an image you attach. These are alternatives — one connected account is enough.",
@@ -139,7 +147,7 @@ const CATEGORIES: { role: Role; title: string; blurb: string }[] = [
   },
 ]
 
-type Role = "text" | "image" | "vision" | "completion"
+type Role = "text" | "image" | "video" | "vision" | "completion"
 
 function StatusBadge({ provider }: { provider: ProviderInfo }) {
   if (provider.has_user_key) {
