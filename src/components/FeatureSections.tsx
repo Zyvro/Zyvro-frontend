@@ -168,6 +168,23 @@ const FEATURES: Feature[] = [
     narrow: true,
   },
   {
+    eyebrow: "Screenshots",
+    title: "Show someone what you are looking at.",
+    body:
+      "Click the camera, then the panel you mean. The app knows where its own panels are, so the image stops on their " +
+      "edges instead of a rectangle you dragged by hand — and the selection frame disappears before the shot, so it is " +
+      "not in the picture. Then it asks what to do with it: Download keeps it on this machine, Share uploads it to your " +
+      "Zyvro account and copies a public link. That is the whole gesture behind “look at this”, whether it is the thing " +
+      "you just built or the error you cannot explain.",
+    shot: {
+      src: "/shots/share.png",
+      alt: "The captured agent panel in a dialog over the IDE, offering Download or Share a link",
+      width: 2880,
+      height: 1800,
+    },
+    wide: true,
+  },
+  {
     eyebrow: "The store",
     title: "Start from one that already ran.",
     body:
