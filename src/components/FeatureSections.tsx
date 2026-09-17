@@ -122,10 +122,17 @@ const FEATURES: Feature[] = [
     eyebrow: "Source control",
     title: "Git, beside the canvas.",
     body:
-      "Stage, commit, branch, stash, push, and a side-by-side diff on any changed file — laid out the way editors lay it out. " +
-      "It drives the git on your machine rather than a reimplementation of it, so what this panel shows and what a terminal " +
-      "in the same folder shows cannot disagree.",
-    shot: { src: "/shots/git.png", alt: "The source control panel: a commit message, and the changed files", width: 520, height: 520 },
+      "Pull, stage, commit, push, branch, stash, tag, and a side-by-side diff on any changed file. The commit message " +
+      "writes itself when you want it to: the claude or codex CLI already signed in on this machine reads what is staged " +
+      "and proposes one line, which you edit before it goes anywhere — no key, no other bill. Conflicts get their own " +
+      "group at the top, because they are the only thing you cannot clear by clicking a plus. It drives the git on your " +
+      "machine rather than a reimplementation of it, so this panel and a terminal in the same folder cannot disagree.",
+    shot: {
+      src: "/shots/git.png",
+      alt: "The source control panel: a commit message written by the agent, and the changed files",
+      width: 524,
+      height: 660,
+    },
     narrow: true,
   },
   {
