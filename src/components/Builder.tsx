@@ -823,7 +823,7 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
                     onClick={() => onAddNode(k.type)}
                     title={k.description}
                   >
-                    <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.04]", meta.tint)}>
+                    <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", meta.plate)}>
                       <Icon className="h-4 w-4" />
                     </span>
                     <span className="min-w-0 flex-1">
@@ -1310,7 +1310,7 @@ function PropertiesPanel({
   return (
     <aside className="panel absolute right-3 top-16 z-30 flex max-h-[calc(100%-9rem)] w-80 flex-col overflow-hidden">
       <div className="flex items-center gap-2.5 border-b border-white/[0.06] px-3 py-3">
-        <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.04]", meta.tint)}>
+        <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg", meta.plate)}>
           <Icon className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">

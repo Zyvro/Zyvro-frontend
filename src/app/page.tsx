@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react"
 import { BUILT_IN_KINDS } from "@/lib/nodes"
 import { categoryMeta, nodeIcon } from "@/components/nodeIcons"
 import { AppleMark, WindowsMark } from "@/components/brand/icons"
+import { FeatureSections } from "@/components/FeatureSections"
 import { LandingShowcase } from "@/components/LandingShowcase"
 import { CTA_ICON, NAV_LINK, PILL_LARGE, PILL_MUTED, PILL_OUTLINE, PILL_PRIMARY } from "@/components/ui/cta"
 import { pageSeo, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/seo"
@@ -94,13 +95,19 @@ export default function HomePage() {
           </div>
         </section>
 
-        <LandingShowcase className="pb-24" />
+        {/* Ce que fait le produit, montré. Avant : un héros, une vitrine et
+            une grille de dix-sept cartes — une fiche technique. */}
+        <FeatureSections />
+
+        <LandingShowcase className="pb-24 pt-28" />
 
         <section className="mx-auto max-w-6xl px-6 pb-24">
           <div className="mb-6 flex items-end justify-between">
             <div>
-              <h2 className="text-xl font-semibold">Nodes</h2>
-              <p className="text-sm text-muted-foreground">Every capability you can drop on the canvas.</p>
+              <h2 className="text-xl font-semibold">Every node</h2>
+              <p className="text-sm text-muted-foreground">
+                The whole palette, so you can see what a workflow can be made of.
+              </p>
             </div>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

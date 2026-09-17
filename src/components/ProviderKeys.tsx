@@ -3,6 +3,13 @@
 import { useState } from "react"
 import * as Dialog from "@radix-ui/react-dialog"
 import { Check, ChevronDown, ChevronUp, ExternalLink, Plus, RefreshCw, X } from "lucide-react"
+import {
+  CliMark,
+  EndpointMark,
+  FluxMark,
+  ImageEndpointMark,
+  LMStudioMark,
+} from "@/components/brand/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -82,9 +89,18 @@ function ProviderIcon({ id }: { id: string }) {
       </svg>
     )
   }
+  if (id === "lmstudio") return <LMStudioMark className="h-8 w-8 shrink-0" />
+  if (id === "custom") return <EndpointMark className="h-8 w-8 shrink-0" />
+  if (id === "custom-image") return <ImageEndpointMark className="h-8 w-8 shrink-0" />
+  if (id === "bfl") return <FluxMark className="h-8 w-8 shrink-0" />
+  if (id === "claude-cli" || id === "codex-cli") return <CliMark className="h-8 w-8 shrink-0" />
+  // Il ne reste rien qui tombe ici aujourd'hui. Une initiale dans un rond gris
+  // est ce qu'on affiche quand on n'a rien à afficher — c'est une absence, pas
+  // une icône — donc elle ne sert plus que de filet pour un fournisseur ajouté
+  // au catalogue et pas encore dessiné.
   const letter = id.slice(0, 1).toUpperCase() || "?"
   return (
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-xs font-semibold text-foreground/85">
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-xs font-semibold text-foreground/85">
       {letter}
     </div>
   )
@@ -170,18 +186,21 @@ function ProviderTile({
           {rank}
         </span>
       )}
-      <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+      <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-start gap-3 text-left">
       <ProviderIcon id={provider.id} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="truncate text-sm font-semibold">{provider.label}</span>
+          {/* Le nom respire plutôt que de se couper : « Custom image en… » et
+              « LM Studio (this m… » ne disent plus lequel c'est, ce qui est la
+              seule chose que cette ligne a à faire. */}
+          <span className="text-sm font-semibold leading-tight">{provider.label}</span>
           {provider.is_default && (
             <span className="rounded-full border border-primary/30 bg-primary/10 px-1.5 py-[1px] text-[9px] font-medium uppercase tracking-wider text-primary">
               default
             </span>
           )}
         </div>
-        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+        <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
           {provider.endpoint
             ? // An address, not a key. Showing four characters of nothing was
               // the version of this that said "Your key ••••" under a server
@@ -194,7 +213,7 @@ function ProviderTile({
               : provider.purpose}
         </p>
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2 self-start pt-0.5">
         <StatusBadge provider={provider} />
         <span className="text-muted-foreground/60 transition-colors group-hover:text-foreground">
           {provider.has_user_key ? <Check className="h-4 w-4 opacity-0" /> : <Plus className="h-4 w-4" />}

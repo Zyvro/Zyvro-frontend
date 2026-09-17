@@ -260,7 +260,7 @@ export function Zynode({ id, data, selected }: ZynodeProps) {
 
       {/* Header */}
       <div className="flex items-start gap-2.5 px-3 pt-3 pb-2">
-        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.05]", meta.tint)}>
+        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", meta.plate)}>
           <Icon className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
