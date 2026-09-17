@@ -5,9 +5,24 @@ export { API_URL }
 
 // The backend stores media under relative /content/... URLs; resolve them
 // against the API origin so <img src> hits the backend, not the frontend.
+//
+// The origin is a module-level constant here and a loopback port the desktop
+// only learns when its engine starts, so the desktop installs a resolver that
+// finishes the job. It is a hook rather than a second function because a second
+// function is what went wrong: the desktop had one, no component called it —
+// they all called this — and every image the engine produced rendered against
+// port 0. One broken <img> per generated image, and nothing in the code looked
+// wrong, because the fix existed. It just was not the one being used.
+let resolveMediaOrigin: ((url: string) => string) | null = null
+
+export function setMediaOriginResolver(resolve: (url: string) => string): void {
+  resolveMediaOrigin = resolve
+}
+
 export function mediaUrl(path: string): string {
-  if (/^(https?:|data:)/.test(path)) return path
-  return `${API_URL}${path.startsWith("/") ? "" : "/"}${path}`
+  if (/^(https?:|data:|blob:)/.test(path)) return path
+  const url = `${API_URL}${path.startsWith("/") ? "" : "/"}${path}`
+  return resolveMediaOrigin ? resolveMediaOrigin(url) : url
 }
 
 export class ApiError extends Error {
