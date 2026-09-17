@@ -103,6 +103,20 @@ const FEATURES: Feature[] = [
     wide: true,
   },
   {
+    eyebrow: "Under the page",
+    title: "Chromium's own devtools, docked.",
+    body:
+      "Right-click, Inspect, and the real front-end opens under the page — Elements on the live DOM, Console, Network, " +
+      "Application with its cookies and its storage. Not an imitation and not a second window to lose behind the others: " +
+      "it is the inspector the app already carries, drawn in the panel, next to the code that produced the page.",
+    shot: {
+      src: "/shots/devtools.png",
+      alt: "The IDE's browser showing a page, with Chromium's Elements panel and its DOM tree docked underneath",
+      width: 1518,
+      height: 1222,
+    },
+  },
+  {
     eyebrow: "Search and replace",
     title: "Across the project, or inside one file.",
     body:
