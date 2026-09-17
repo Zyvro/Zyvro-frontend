@@ -41,14 +41,15 @@ async function fetchShared(id: string): Promise<SharedWorkflowData | null> {
   }
 }
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const wf = await fetchShared(params.id)
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const wf = await fetchShared(id)
   const name = wf?.name?.trim()
   if (!name) {
     return pageSeo({
       title: "Shared workflow",
       description: `A workflow shared on ${SITE_NAME}.`,
-      path: `/w/${params.id}`,
+      path: `/w/${id}`,
       noIndex: true,
     })
   }
@@ -61,12 +62,13 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     description:
       wf?.description?.trim() ||
       `A workflow shared on ${SITE_NAME}. Open it, see how it is wired, and copy it into your own account.`,
-    path: `/w/${params.id}`,
+    path: `/w/${id}`,
     noIndex: true,
     image: shot ? { url: shot, alt: `${name} — what this workflow produced` } : undefined,
   })
 }
 
-export default function SharedWorkflowPage({ params }: { params: { id: string } }) {
-  return <SharedWorkflow id={params.id} />
+export default async function SharedWorkflowPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return <SharedWorkflow id={id} />
 }

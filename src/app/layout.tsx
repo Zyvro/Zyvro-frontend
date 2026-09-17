@@ -52,11 +52,16 @@ export const metadata: Metadata = {
 // ligne et zéro nonce.
 export const dynamic = "force-dynamic"
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+// `await`, depuis Next 15 : lire la requête est devenu asynchrone. Sans lui,
+// l'appel rend une promesse que personne n'attend — la page se rend quand même,
+// et l'effet de bord ci-dessus n'a pas lieu. C'est-à-dire : une page prérendue,
+// un nonce dans l'en-tête que le HTML n'a pas, et la politique qui bloque les
+// scripts de Next. Rien n'en avertirait à la compilation.
+export default async function RootLayout({ children }: { children: ReactNode }) {
   // La valeur ne sert pas ici : Next lit lui-même le nonce dans l'en-tête de
   // requête posé par le middleware et l'appose sur ses balises. L'appel est là
   // pour l'effet de bord ci-dessus.
-  headers()
+  await headers()
 
   return (
     <html lang="en" className="dark">
