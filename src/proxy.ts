@@ -14,7 +14,13 @@ import { API_URL } from "@/lib/origin"
 // Le prix est réel : une page qui porte un nonce ne peut pas être servie
 // depuis le cache statique, elle est rendue à la demande. On l'assume, ce
 // sont pour l'essentiel des pages derrière une session.
-export function middleware(request: NextRequest) {
+//
+// Le fichier s'appelait `middleware.ts`. Next 16 a renommé la convention en
+// `proxy`, et ce n'est pas qu'un mot : un `proxy` tourne sur Node, pas sur le
+// runtime edge, sans que ce soit configurable. Ce qui est fait ici — tirer un
+// identifiant, écrire des en-têtes — ne dépend d'aucun des deux ; `Buffer`, qui
+// n'existait sur edge que par polyfill, y est même chez lui.
+export function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64")
 
   // Là où le front parle vraiment : lui-même, et l'API. Importée depuis la
