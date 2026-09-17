@@ -3,7 +3,24 @@
 import { ArrowRight, ImageOff } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { mediaUrl } from "@/lib/api"
-import type { WorkflowPreview } from "@/lib/api"
+
+// Ce que cette vignette lit, et rien de plus.
+//
+// Déclaré ici plutôt que repris de `WorkflowPreview` pour que le desktop puisse
+// l'appeler avec le sien : les deux formes portent les mêmes champs, elles
+// diffèrent seulement par ce que la vignette n'utilise pas. Le desktop en avait
+// donc écrit une deuxième copie — et cette copie a dérivé exactement là où ce
+// fichier avertit deux lignes plus bas, dans `ImagePane` : sans hauteur de
+// rangée définie, l'image reprend sa taille intrinsèque, sort de la carte et se
+// pose sur le titre.
+export type ThumbPreview = {
+  input_kind: "text" | "image" | "none"
+  output_kind: "text" | "image" | "none"
+  input_text?: string
+  input_image?: string
+  output_text?: string
+  output_image?: string
+}
 
 // A workflow's thumbnail is one real pair from a finished run: what went in on
 // the left, what came out on the right. Publishing requires a complete run, so
@@ -63,7 +80,7 @@ function Pane({
   )
 }
 
-export function hasPreview(preview?: WorkflowPreview | null): preview is WorkflowPreview {
+export function hasPreview(preview?: ThumbPreview | null): preview is ThumbPreview {
   return Boolean(preview && (preview.input_kind !== "none" || preview.output_kind !== "none"))
 }
 
@@ -72,7 +89,7 @@ export function WorkflowThumb({
   className,
   fallback,
 }: {
-  preview?: WorkflowPreview | null
+  preview?: ThumbPreview | null
   className?: string
   fallback?: React.ReactNode
 }) {

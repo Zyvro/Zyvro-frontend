@@ -49,6 +49,17 @@ const FEATURES: Feature[] = [
     shot: { src: "/shots/agent.png", alt: "The agent panel, running the CLI installed on this machine", width: 720, height: 1664 },
   },
   {
+    eyebrow: "The store",
+    title: "Start from one that already ran.",
+    body:
+      "Workflows other people published, each shown as what went in and what came out — because a name and a description " +
+      "do not tell you whether it does what you want. Installing pulls the node packs it needs. They run on your machine, " +
+      "in the sandbox, and you can read the source before installing anything.",
+    shot: { src: "/shots/store.png", alt: "The store: published workflows, each with its input and its result", width: 1440, height: 760 },
+    link: { href: "/store", label: "Browse the store" },
+    flip: true,
+  },
+  {
     eyebrow: "Source control",
     title: "Git, beside the canvas.",
     body:
@@ -57,7 +68,6 @@ const FEATURES: Feature[] = [
       "in the same folder shows cannot disagree.",
     shot: { src: "/shots/git.png", alt: "The source control panel: a commit message, and the changed files", width: 520, height: 520 },
     narrow: true,
-    flip: true,
   },
 ]
 
