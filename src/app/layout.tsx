@@ -1,12 +1,22 @@
+import type { Metadata } from "next"
 import type { ReactNode } from "react"
 import { headers } from "next/headers"
+import { OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/seo"
 import "./globals.css"
 import { Providers } from "./providers"
 
-export const metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:4101"),
-  title: "Zyvro - Visual AI Workflow Builder",
-  description: "Build reusable visual AI agents/workflows using your own provider keys",
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  title: {
+    // Chaque page nomme ce qu'elle est, et la marque est ajoutée ici : sans
+    // gabarit, la moitié des onglets s'appelaient « Zyvro » et l'autre moitié
+    // oubliait de le dire.
+    default: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    template: `%s — ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  alternates: { canonical: SITE_URL },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -17,10 +27,19 @@ export const metadata = {
     apple: [{ url: "/brand/apple-touch-icon.png", sizes: "180x180" }],
   },
   openGraph: {
-    title: "Zyvro - Visual AI Workflow Builder",
-    description: "Build reusable visual AI agents/workflows using your own provider keys",
-    images: [{ url: "/brand/logo-full-with-slogan.png", width: 800, height: 267 }],
     type: "website",
+    siteName: SITE_NAME,
+    url: SITE_URL,
+    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    description: SITE_DESCRIPTION,
+    locale: "en",
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    description: SITE_DESCRIPTION,
+    images: [OG_IMAGE],
   },
 }
 

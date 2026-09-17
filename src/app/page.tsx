@@ -1,9 +1,18 @@
+import type { Metadata } from "next"
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, MonitorDown } from "lucide-react"
 import { BUILT_IN_KINDS } from "@/lib/nodes"
 import { categoryMeta, nodeIcon } from "@/components/nodeIcons"
 import { LandingShowcase } from "@/components/LandingShowcase"
+import { pageSeo, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/seo"
 import { cn } from "@/lib/utils"
+
+export const metadata: Metadata = pageSeo({
+  title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+  description: SITE_DESCRIPTION,
+  path: "/",
+  absoluteTitle: true,
+})
 
 export default function HomePage() {
   return (
@@ -17,6 +26,12 @@ export default function HomePage() {
             <img src="/brand/logo-icon.png" alt="Zyvro" className="h-8 w-8 rounded-lg sm:hidden" />
           </Link>
           <nav className="flex items-center gap-2">
+            <Link
+              href="/download"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-sm text-foreground hover:bg-white/[0.06]"
+            >
+              <MonitorDown className="h-4 w-4" /> Desktop
+            </Link>
             <Link href="/login" className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-white/[0.06] hover:text-foreground">
               Log in
             </Link>
@@ -61,10 +76,16 @@ export default function HomePage() {
             >
               Get started <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/login" className="inline-flex h-11 items-center rounded-lg border border-white/10 bg-white/[0.03] px-6 text-sm font-medium hover:bg-white/[0.07]">
-              Log in
+            <Link
+              href="/download"
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-6 text-sm font-medium hover:bg-white/[0.07]"
+            >
+              <MonitorDown className="h-4 w-4" /> Download the desktop app
             </Link>
           </div>
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            macOS and Windows · free · runs on your own machine
+          </p>
         </section>
 
         <LandingShowcase className="pb-24" />
