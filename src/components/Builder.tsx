@@ -913,13 +913,22 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
           />
         )}
 
-        <ChatDock
-          suggestions={[
-            `Run "${name || "this workflow"}" for me`,
-            "What inputs does this workflow need?",
-            "Which workflows do I have?",
-          ]}
-        />
+        {/* Pas dans le desktop.
+            
+            Cette bulle flottante est l'assistant du site, qui parle au service
+            hébergé. Le desktop a déjà son panneau Agent à droite, qui parle au
+            CLI installé sur la machine : deux assistants dans la même fenêtre,
+            avec deux cerveaux différents, et l'un des deux posé par-dessus le
+            canvas sans que rien ne dise lequel on ouvre. */}
+        {!embedded && (
+          <ChatDock
+            suggestions={[
+              `Run "${name || "this workflow"}" for me`,
+              "What inputs does this workflow need?",
+              "Which workflows do I have?",
+            ]}
+          />
+        )}
 
         {workflow && <ShareDialog workflow={workflow} open={shareOpen} onOpenChange={setShareOpen} initialTab={shareTab} />}
       </div>

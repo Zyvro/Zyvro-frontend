@@ -1,9 +1,11 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { ArrowRight, MonitorDown } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { BUILT_IN_KINDS } from "@/lib/nodes"
 import { categoryMeta, nodeIcon } from "@/components/nodeIcons"
+import { AppleMark, WindowsMark } from "@/components/brand/icons"
 import { LandingShowcase } from "@/components/LandingShowcase"
+import { CTA_ICON, NAV_LINK, PILL_LARGE, PILL_MUTED, PILL_OUTLINE, PILL_PRIMARY } from "@/components/ui/cta"
 import { pageSeo, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
@@ -25,21 +27,22 @@ export default function HomePage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/brand/logo-icon.png" alt="Zyvro" className="h-8 w-8 rounded-lg sm:hidden" />
           </Link>
+          {/* Un seul bouton dans cette barre. « Desktop » et « Log in » sont
+              des liens : les encadrer en faisait trois boutons de rangs
+              différents collés les uns aux autres, ce qui n'est plus une
+              hiérarchie. */}
           <nav className="flex items-center gap-2">
-            <Link
-              href="/download"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-sm text-foreground hover:bg-white/[0.06]"
-            >
-              <MonitorDown className="h-4 w-4" /> Desktop
+            <Link href="/store" className={cn(NAV_LINK, "hidden sm:inline-flex")}>
+              Store
             </Link>
-            <Link href="/login" className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-white/[0.06] hover:text-foreground">
+            <Link href="/download" className={PILL_OUTLINE}>
+              Desktop
+            </Link>
+            <Link href="/login" className={cn(PILL_MUTED, "hidden sm:inline-flex")}>
               Log in
             </Link>
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.4),0_4px_16px_hsl(var(--primary)/0.35)] hover:bg-primary/90"
-            >
-              Start building <ArrowRight className="h-4 w-4" />
+            <Link href="/signup" className={PILL_PRIMARY}>
+              Start building
             </Link>
           </nav>
         </div>
@@ -69,23 +72,26 @@ export default function HomePage() {
             Wire text, image and vision models into reusable workflows. The canvas defines what the agent can do. The Brain decides how to use it at
             runtime.
           </p>
-          <div className="mt-10 flex justify-center gap-3">
-            <Link
-              href="/signup"
-              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-6 text-sm font-medium text-primary-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.4),0_4px_16px_hsl(var(--primary)/0.35)] hover:bg-primary/90"
-            >
-              Get started <ArrowRight className="h-4 w-4" />
+          <div className="mt-10 flex flex-col items-center justify-center gap-2.5 sm:flex-row sm:gap-3">
+            <Link href="/signup" className={cn(PILL_PRIMARY, PILL_LARGE, "w-full sm:w-auto")}>
+              Start building <ArrowRight className={CTA_ICON} />
             </Link>
-            <Link
-              href="/download"
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-6 text-sm font-medium hover:bg-white/[0.07]"
-            >
-              <MonitorDown className="h-4 w-4" /> Download the desktop app
+            {/* La plateforme est nommée dans le bouton : « macOS and Windows ·
+                free · runs on your own machine » en gris sous les deux boutons
+                était une note de bas de page pour une information qui décide
+                du clic. */}
+            <Link href="/download" className={cn(PILL_OUTLINE, PILL_LARGE, "w-full sm:w-auto")}>
+              {/* Les deux marques comme un seul signe : un filet les sépare
+                  au lieu d'un blanc, sinon on lit deux icônes hésitantes
+                  plutôt que « les deux plateformes ». */}
+              <span className="flex items-center gap-1.5">
+                <AppleMark className="h-[17px] w-[17px]" />
+                <span className="h-3.5 w-px bg-current opacity-25" />
+                <WindowsMark className="h-[17px] w-[17px]" />
+              </span>
+              Download desktop
             </Link>
           </div>
-          <p className="mt-3 text-[11px] text-muted-foreground">
-            macOS and Windows · free · runs on your own machine
-          </p>
         </section>
 
         <LandingShowcase className="pb-24" />
@@ -102,9 +108,12 @@ export default function HomePage() {
               const Icon = nodeIcon(k.type)
               const meta = categoryMeta(k.category)
               return (
-                <div key={k.type} className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-card p-4 transition-colors hover:border-white/20">
-                  <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.04]", meta.tint)}>
-                    <Icon className="h-4 w-4" />
+                <div
+                  key={k.type}
+                  className="group flex items-start gap-3.5 rounded-xl border border-white/[0.08] bg-card p-4 transition-all hover:-translate-y-[1px] hover:border-white/20 hover:bg-white/[0.03]"
+                >
+                  <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", meta.plate)}>
+                    <Icon className="h-[18px] w-[18px]" strokeWidth={1.9} />
                   </span>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">

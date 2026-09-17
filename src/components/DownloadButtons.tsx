@@ -4,6 +4,7 @@ import { useSyncExternalStore } from "react"
 import { Apple, Download, MonitorDown } from "lucide-react"
 import type { DesktopAsset, Platform } from "@/lib/releases"
 import { formatSize, PLATFORM_LABEL } from "@/lib/releases"
+import { PILL_LARGE, PILL_PRIMARY } from "@/components/ui/cta"
 import { cn } from "@/lib/utils"
 
 // Which download to put first.
@@ -49,9 +50,6 @@ export function DownloadButtons({ assets, focus }: { assets: DesktopAsset[]; foc
   const detected = usePlatform()
   const installers = assets.filter((a) => a.kind === "installer")
 
-  // A page dedicated to one platform says so; the general page follows the
-  // machine, and falls back to Apple Silicon before anything is known so the
-  // first paint is never an empty space.
   const wanted: Platform =
     focus === "windows"
       ? "windows"
@@ -65,36 +63,43 @@ export function DownloadButtons({ assets, focus }: { assets: DesktopAsset[]; foc
   const others = installers.filter((a) => a !== primary)
   if (!primary) return null
 
+  // Un bouton, et les autres plateformes en une ligne de liens.
+  //
+  // Trois boutons de même taille, c'est trois fois « choisis » posé devant
+  // quelqu'un qui voulait télécharger. Les deux autres restent à portée, à
+  // leur rang : du texte, pas des boutons.
   return (
-    <div className="flex flex-col items-center gap-3 sm:items-start">
-      <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-start">
-        <a
-          href={primary.url}
-          className="inline-flex h-12 items-center gap-2.5 rounded-xl bg-primary px-6 text-sm font-medium text-primary-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.4),0_4px_16px_hsl(var(--primary)/0.35)] hover:bg-primary/90"
-        >
-          <PlatformIcon platform={primary.platform} className="h-4 w-4" />
-          Download for {PLATFORM_LABEL[primary.platform]}
-        </a>
-        {others.map((a) => (
-          <a
-            key={a.name}
-            href={a.url}
-            className={cn(
-              "inline-flex h-12 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-5 text-sm font-medium",
-              "hover:bg-white/[0.07]"
-            )}
-          >
-            <PlatformIcon platform={a.platform} className="h-4 w-4 opacity-70" />
-            {PLATFORM_LABEL[a.platform]}
-          </a>
-        ))}
-      </div>
-      <p className="text-[11px] text-muted-foreground">
-        {primary.name} · {formatSize(primary.size)}
-        {primary.platform === "mac-arm64" && " · Intel Mac? take the Intel build beside it."}
+    <div className="flex flex-col items-center gap-3.5 lg:items-start">
+      <a href={primary.url} className={cn(PILL_PRIMARY, PILL_LARGE)}>
+        <PlatformIcon platform={primary.platform} className="h-[18px] w-[18px]" />
+        Download for {PLATFORM_LABEL[primary.platform]}
+      </a>
+
+      <p className="text-[12px] text-muted-foreground">
+        {formatSize(primary.size)} · {release(primary.name)}
+        {others.length > 0 && (
+          <>
+            <span className="mx-2 text-white/20">|</span>
+            {others.map((a, i) => (
+              <span key={a.name}>
+                {i > 0 && <span className="mx-1.5 text-white/20">·</span>}
+                <a href={a.url} className="text-muted-foreground underline decoration-white/20 underline-offset-4 hover:text-foreground hover:decoration-white/50">
+                  {PLATFORM_LABEL[a.platform]}
+                </a>
+              </span>
+            ))}
+          </>
+        )}
       </p>
     </div>
   )
+}
+
+// release sort le numéro de version du nom de fichier : « 0.1.0-alpha.5 » dit
+// ce qu'on emporte, « Zyvro.Studio-0.1.0-alpha.5-arm64.dmg » dit surtout que
+// personne n'a relu cette ligne.
+function release(name: string): string {
+  return name.match(/\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?/)?.[0] ?? name
 }
 
 export function DownloadTable({ assets }: { assets: DesktopAsset[] }) {
