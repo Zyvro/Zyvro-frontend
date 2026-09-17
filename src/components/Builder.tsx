@@ -56,6 +56,7 @@ import {
   nodeKind,
   portOfHandle,
   runtimeInputDefs,
+  unnamedInputNodes,
   validateConnection,
   wouldCycle,
   type NodeKind,
@@ -332,6 +333,7 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
   }, [executionId, applyExecutionToNodes])
 
   const inputDefs = useMemo(() => runtimeInputDefs(fromFlowNodes(nodes)), [nodes])
+  const unnamedInputs = useMemo(() => unnamedInputNodes(fromFlowNodes(nodes)), [nodes])
   // position > 0 means this run is still waiting behind other jobs; 0 means
   // it is actually executing; -1 means the queue lost track of it (finished,
   // or a server restart) so we fall back to the plain "Running…" state.
@@ -778,10 +780,17 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
         {showRunPanel && (
           <RunPanel
             defs={inputDefs}
+            unnamed={unnamedInputs}
             values={runtimeInputs}
             onChange={(key, v) => setRuntimeInputs((prev) => ({ ...prev, [key]: v }))}
             onClose={() => setShowRunPanel(false)}
             onRun={() => void startRun()}
+            onReveal={(nodeId) => {
+              // Le panneau se ferme et le nœud s'ouvre : nommer une entrée se
+              // fait là où elle est, pas dans une fenêtre qui parle d'elle.
+              setShowRunPanel(false)
+              setSelectedId(nodeId)
+            }}
             mcpHint={`zyvro_run_workflow {"workflow_id": "${workflow?.id || ""}", "inputs": {${inputDefs
               .map((d) => `"${d.key}": ${d.type === "image" ? '"<data URL or http URL>"' : '"..."'}`)
               .join(", ")}}}`}
@@ -1154,17 +1163,21 @@ function fromFlowEdges(edges: Edge[]): GraphEdge[] {
 
 function RunPanel({
   defs,
+  unnamed,
   values,
   onChange,
   onClose,
   onRun,
+  onReveal,
   mcpHint,
 }: {
   defs: RuntimeInputDef[]
+  unnamed: Array<{ nodeId: string; type: string; label: string }>
   values: Record<string, string>
   onChange: (key: string, v: string) => void
   onClose: () => void
   onRun: () => void
+  onReveal: (nodeId: string) => void
   mcpHint: string
 }) {
   const missing = defs.filter((d) => !d.hasDefault && !values[d.key])
@@ -1181,6 +1194,36 @@ function RunPanel({
         </button>
       </div>
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
+        {/* Les entrées que personne ne peut nommer.
+            Elles ne sont pas une erreur — un workflow qui tourne toujours sur
+            la même valeur n'a pas besoin de nom. Mais tant qu'elles n'en ont
+            pas, aucune exécution ne peut les remplacer autrement qu'en
+            désignant l'identifiant du nœud, qui n'est écrit nulle part. Dit
+            ici, à l'endroit où l'on remplit justement des entrées. */}
+        {unnamed.length > 0 && (
+          <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
+            <div className="text-[11px] font-semibold">
+              {unnamed.length} input{unnamed.length > 1 ? "s" : ""} without a name
+            </div>
+            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+              A run can only replace those by node id. Give one a name and it appears here, in the API call and in what
+              an agent can pass.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {unnamed.map((n) => (
+                <button
+                  key={n.nodeId}
+                  onClick={() => onReveal(n.nodeId)}
+                  className="rounded border border-dashed border-white/25 px-1.5 py-[2px] font-mono text-[10px] text-muted-foreground hover:border-white/50 hover:text-foreground"
+                  title="Open this node to give it a name"
+                >
+                  {n.label || n.nodeId}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {defs.map((d) => (
           <div key={d.key} className="space-y-1.5">
             <div className="flex items-center justify-between">

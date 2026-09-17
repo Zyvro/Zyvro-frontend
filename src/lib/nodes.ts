@@ -355,10 +355,38 @@ export type RuntimeInputDef = {
   hasDefault: boolean
 }
 
+// RUNTIME_INPUT_TYPES : les nœuds qu'une exécution peut remplir par leur nom.
+//
+// Une seule liste, lue par ce qui les collecte et par ce qui signale ceux qui
+// n'ont pas de nom. Deux listes finiraient par différer, et le nœud qu'on
+// oublierait dans la seconde serait justement celui qu'on ne sait pas remplir.
+export const RUNTIME_INPUT_TYPES = ["imageInput", "textInput"] as const
+
+export function takesRuntimeInput(type: string): boolean {
+  return (RUNTIME_INPUT_TYPES as readonly string[]).includes(type)
+}
+
+// unnamedInputNodes : les entrées qu'aucun appelant ne peut nommer.
+//
+// C'est légal, et c'est un piège. Sans nom, la valeur d'un nœud ne se remplace
+// qu'en désignant son identifiant — `a`, `n1` — qui n'est écrit nulle part dans
+// l'interface et qui ne veut rien dire pour qui lit le workflow. Un agent à qui
+// on demande « refais-le avec ce fichier » tourne alors sur la valeur d'origine
+// et rend un résultat qui a l'air juste.
+export function unnamedInputNodes(nodes: GraphNode[]): Array<{ nodeId: string; type: string; label: string }> {
+  return nodes
+    .filter((n) => takesRuntimeInput(n.type))
+    .filter((n) => {
+      const cfg = (n.data?.config || {}) as Record<string, unknown>
+      return String(cfg.inputKey || "").trim() === ""
+    })
+    .map((n) => ({ nodeId: n.id, type: n.type, label: String(n.data?.label || "") }))
+}
+
 export function runtimeInputDefs(nodes: GraphNode[]): RuntimeInputDef[] {
   const out: RuntimeInputDef[] = []
   for (const n of nodes) {
-    if (n.type !== "textInput" && n.type !== "imageInput") continue
+    if (!takesRuntimeInput(n.type)) continue
     const cfg = (n.data?.config || {}) as Record<string, unknown>
     const key = String(cfg.inputKey || "").trim()
     if (!key) continue

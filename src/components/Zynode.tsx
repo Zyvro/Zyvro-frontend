@@ -6,7 +6,7 @@ import { Check, Database, Download, Loader2, Maximize2, MoreHorizontal, Play, Pl
 import { cn, fileToDataUrl } from "@/lib/utils"
 import { mediaUrl } from "@/lib/api"
 import { requestRunNode } from "@/lib/nodeActions"
-import { inputHandleIds, nodeKind, portOfHandle } from "@/lib/nodes"
+import { inputHandleIds, nodeKind, portOfHandle, takesRuntimeInput } from "@/lib/nodes"
 import { categoryMeta, nodeIcon } from "@/components/nodeIcons"
 import { VoxelCanvas, type VoxelFace } from "@/components/VoxelCanvas"
 
@@ -275,6 +275,21 @@ export function Zynode({ id, data, selected }: ZynodeProps) {
                 title={`Runtime input "${inputKey}" — passed when running (UI, API, MCP)`}
               >
                 {"{"}{inputKey}{"}"}
+              </span>
+            )}
+            {/* Une entrée sans nom, dite plutôt que tue.
+                C'est légal et c'est un piège : sans nom, sa valeur ne se
+                remplace qu'en désignant l'identifiant du nœud, qui n'est écrit
+                nulle part et ne veut rien dire pour qui lit le workflow. Un
+                agent à qui on demande « refais-le avec ce fichier » tourne
+                alors sur la valeur d'origine et rend un résultat qui a l'air
+                juste. */}
+            {!inputKey && takesRuntimeInput(nodeType) && (
+              <span
+                className="inline-block rounded border border-dashed border-white/25 px-1.5 py-[2px] font-mono text-[8px] font-semibold tracking-wide text-muted-foreground"
+                title={`No runtime name. A run can only replace this value by node id (${id}), which nothing in the interface shows. Give it a name in the panel — then a run, the API and an agent can pass it by that name.`}
+              >
+                {"{"} ? {"}"}
               </span>
             )}
           </div>
