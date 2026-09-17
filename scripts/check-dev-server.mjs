@@ -11,6 +11,13 @@
 // C'est arrivé deux fois dans la même journée. La seconde a coûté le temps de
 // comprendre que la première n'était pas un hasard.
 //
+// Ce qu'il ne doit pas faire : refuser un déploiement. En production, c'est
+// `next start` qui occupe ce port, et refuser là-bas transformerait ce garde en
+// formalité qu'on contourne à chaque mise en ligne — un garde qu'on apprend à
+// désactiver ne garde plus rien. Il demande donc au serveur qui écoute ce qu'il
+// est : `next dev` sert une route de développement — la pile d'origine d'une
+// erreur — que `next start` ne connaît pas.
+//
 //     node scripts/check-dev-server.mjs
 import { createConnection } from "node:net"
 
@@ -29,6 +36,20 @@ const listening = await new Promise((resolve) => {
 })
 
 if (!listening) process.exit(0)
+
+// Une route que seul un serveur de développement sert. En production elle rend
+// 404 ; en développement elle rend autre chose — 400 sur une requête sans
+// paramètres, ce qui est une réponse, donc une preuve.
+const dev = await fetch(`http://127.0.0.1:${PORT}/__nextjs_original-stack-frame`)
+  .then((res) => res.status !== 404)
+  .catch(() => true)
+
+if (!dev) {
+  console.log(
+    `Something is listening on ${PORT}, and it is not a dev server: building is what a deploy does.`
+  )
+  process.exit(0)
+}
 
 console.log(
   `A dev server is listening on ${PORT}. Building now would delete the files it is serving:\n` +
