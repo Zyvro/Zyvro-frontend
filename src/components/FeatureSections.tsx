@@ -103,6 +103,24 @@ const FEATURES: Feature[] = [
     wide: true,
   },
   {
+    eyebrow: "Search and replace",
+    title: "Across the project, or inside one file.",
+    body:
+      "⇧⌘F searches every file in the folder — plain text, whole word, or a regular expression with $1 in the " +
+      "replacement — and you narrow it with the usual globs. Replace one occurrence, or all of them in one press: the " +
+      "button says how many and in how many files before you touch it. ⌘F stays in the file you are reading, in the " +
+      "editor's own bar. What gets replaced is what you were shown: each passage is checked against the file again, and " +
+      "one that moved since the search is skipped rather than overwritten.",
+    shot: {
+      src: "/shots/search.png",
+      alt: "The search panel: a query, a replacement, file filters, and results grouped by file with each match highlighted",
+      width: 524,
+      height: 860,
+    },
+    narrow: true,
+    flip: true,
+  },
+  {
     eyebrow: "Inline completion",
     title: "Grey text, from a model you chose.",
     body:
