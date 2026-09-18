@@ -65,13 +65,15 @@ export default function HomePage() {
 
         {/* Le héros doit dire ce que c'est, en une seconde.
             (Repris le 18/09, sur le retour de Jeremy : « il faut surtout revoir
-            la hero banner pour comprendre que c'est un ADE, Agent Dev Editor.
-            C'est ce qui fait comprendre en 1 sec ce que l'outil est. »)
+            la hero banner pour comprendre que c'est un ADE. C'est ce qui fait
+            comprendre en 1 sec ce que l'outil est. » — puis, l'ayant lu écrit
+            de travers ici : « ADE (Agent Development Environment) ».)
 
             Ce qu'il disait avant : « Visual AI workflows », un logo, et un
             paragraphe sur le câblage de modèles. Quelqu'un qui arrive en
-            conclut « encore un constructeur de workflows » et repart — le mot
-            éditeur n'apparaissait nulle part, alors que c'est l'outil.
+            conclut « encore un constructeur de workflows » et repart — rien ne
+            disait qu'on parle d'un environnement de développement, alors que
+            c'est l'outil.
 
             Trois choses ont changé :
 
@@ -81,14 +83,16 @@ export default function HomePage() {
               coupe pas sur un téléphone et ne se traduit pas.
             · **La catégorie d'abord, le détail ensuite.** ADE est un mot que
               personne ne connaît encore, donc il arrive adossé à celui que tout
-              le monde connaît : un IDE.
+              le monde connaît : un IDE. Le rapprochement n'est pas une image —
+              Integrated Development Environment, Agent Development Environment,
+              une lettre d'écart, et c'est celle qui dit tout le produit.
             · **Le logo perd son slogan ici.** « More than prompts » sous un
               titre qui dit déjà ce que c'est, ce sont deux slogans qui se
               disputent la même seconde. Le logo à slogan reste la marque
               partout ailleurs. */}
         <section className="mx-auto max-w-4xl px-6 pb-16 pt-24 text-center">
           <span className="inline-block rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            ADE · Agent Dev Editor
+            ADE · Agent Development Environment
           </span>
           <div className="mt-8 flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}

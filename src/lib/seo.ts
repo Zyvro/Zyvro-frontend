@@ -10,10 +10,17 @@ import type { Metadata } from "next"
 export const SITE_NAME = "Zyvro"
 // Le slogan de marque — celui qui est cuit dans le logo.
 export const SITE_TAGLINE = "More than prompts"
-// Ce que le produit EST, en trois mots. Un slogan ne dit pas la catégorie, et
-// c'est la catégorie qu'on lit dans un onglet ou un résultat de recherche :
-// « Zyvro — More than prompts » ne laisse pas deviner un éditeur.
-export const SITE_CATEGORY = "Agent Dev Editor"
+// Ce que le produit EST. Un slogan ne dit pas la catégorie, et c'est la
+// catégorie qu'on lit dans un onglet ou un résultat de recherche : « Zyvro —
+// More than prompts » ne laisse pas deviner un environnement de développement.
+//
+// **Environment, pas Editor** — corrigé par Jeremy le 18/09, et ce n'est pas
+// un détail de vocabulaire : avec le vrai mot, le parallèle avec IDE est exact.
+// Integrated Development Environment, Agent Development Environment : une
+// lettre change, et c'est celle qui dit tout le produit. « Editor » cassait ce
+// parallèle en même temps qu'il rétrécissait l'outil à son éditeur de texte,
+// alors qu'il porte aussi un shell, git, un navigateur et le canvas.
+export const SITE_CATEGORY = "Agent Development Environment"
 
 export const SITE_DESCRIPTION =
   "An IDE built around the agent, not beside it. Claude Code, Codex and Qwen run inside the window, on your " +
