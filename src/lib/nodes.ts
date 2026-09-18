@@ -395,14 +395,55 @@ export function unnamedInputNodes(nodes: GraphNode[]): Array<{ nodeId: string; t
     .map((n) => ({ nodeId: n.id, type: n.type, label: String(n.data?.label || "") }))
 }
 
+// INPUT_PLACEHOLDER : `{{input:clef}}`, écrit dans la configuration d'un nœud.
+//
+// Un chemin de fichier, un texte, la valeur d'un pack : partout où le moteur
+// substitue, quelqu'un peut en écrire un. Le motif est le même des deux côtés —
+// `engine/runtime.go` le cherche avec la même expression.
+const INPUT_PLACEHOLDER = /\{\{input:([^}]*)\}\}/g
+
+// placeholderKeys : les entrées qu'un nœud réclame par un motif, quelque part
+// dans sa configuration.
+//
+// Ce qui manquait, et qui a coûté un fichier nommé `{{input:gfx}}` : une entrée
+// déclarée par un motif n'était déclarée nulle part. Seuls les nœuds d'entrée
+// portant un `inputKey` comptaient, donc le panneau ne demandait pas `gfx`, le
+// run partait sans, et le chemin de sortie gardait ses accolades — trois
+// mégaoctets écrits dans un fichier dont le nom était le motif lui-même.
+//
+// On regarde donc toute la configuration, à toute profondeur : c'est là que le
+// moteur substitue.
+function placeholderKeys(value: unknown, depth = 0, out: string[] = []): string[] {
+  if (depth > 8) return out
+  if (typeof value === "string") {
+    for (const m of value.matchAll(INPUT_PLACEHOLDER)) {
+      const key = m[1].trim()
+      if (key && !out.includes(key)) out.push(key)
+    }
+    return out
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) placeholderKeys(item, depth + 1, out)
+    return out
+  }
+  if (value && typeof value === "object") {
+    for (const item of Object.values(value as Record<string, unknown>)) {
+      placeholderKeys(item, depth + 1, out)
+    }
+  }
+  return out
+}
+
 export function runtimeInputDefs(nodes: GraphNode[]): RuntimeInputDef[] {
   const out: RuntimeInputDef[] = []
+  const vus = new Set<string>()
   for (const n of nodes) {
     if (!takesRuntimeInput(n.type)) continue
     const cfg = (n.data?.config || {}) as Record<string, unknown>
     const key = String(cfg.inputKey || "").trim()
     if (!key) continue
     const isImage = n.type === "imageInput"
+    vus.add(key)
     out.push({
       key,
       type: isImage ? "image" : "text",
@@ -410,6 +451,27 @@ export function runtimeInputDefs(nodes: GraphNode[]): RuntimeInputDef[] {
       label: String(n.data?.label || ""),
       hasDefault: isImage ? Boolean(cfg.dataUrl) : String(cfg.value || "").trim() !== "",
     })
+  }
+
+  // Puis celles que des motifs réclament. Après les nœuds d'entrée, et sans
+  // doublon : un `{{input:sujet}}` qui reprend le nom d'un nœud d'entrée parle
+  // de la même valeur, et la demander deux fois serait demander deux fois la
+  // même chose.
+  for (const n of nodes) {
+    for (const key of placeholderKeys(n.data?.config)) {
+      if (vus.has(key)) continue
+      vus.add(key)
+      out.push({
+        key,
+        type: "text",
+        nodeId: n.id,
+        label: String(n.data?.label || ""),
+        // Un motif n'a pas de valeur par défaut : c'est tout son intérêt, et
+        // un run lancé sans lui échoue maintenant au lieu d'écrire un fichier
+        // dont le nom est le motif.
+        hasDefault: false,
+      })
+    }
   }
   return out
 }
