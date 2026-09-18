@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "check:origin": "node scripts/check-build-origin.mjs https://server.zyv.ro",
     "build:prod": "node scripts/check-dev-server.mjs && rm -rf .next && NEXT_PUBLIC_API_URL=https://server.zyv.ro NEXT_PUBLIC_APP_URL=https://zyv.ro next build && npm run check:origin && npm run check:download && npm run check:seo",
-    "typecheck": "tsc --noEmit && node scripts/check-download.mjs",
+    "typecheck": "tsc --noEmit && node scripts/check-download.mjs && node scripts/check-build-guard.mjs",
     "check:download": "node scripts/check-download.mjs",
     "check:seo": "node scripts/check-seo.mjs",
     "prebuild": "node scripts/check-dev-server.mjs"

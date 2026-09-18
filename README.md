@@ -17,6 +17,18 @@ The app talks to the Go backend, which it finds through `NEXT_PUBLIC_API_URL`
 (default `http://localhost:4102`). Put it in `.env.local` if your backend is
 somewhere else.
 
+### Building while a dev server runs
+
+You cannot, and the build says so rather than letting you. `next build` and
+`next dev` write to the same `.next`: building pulls the files out from under a
+running dev server, which then serves the page and answers 404 for its
+stylesheet — a bug that looks like it is in your CSS and is not.
+
+The check lives in `next.config.js`, so it applies to `npx next build` as much
+as to `npm run build`. It only refuses a *dev* server: a deploy, where
+`next start` holds that port, goes through. To build anyway, stop the dev
+server, or `PORT=0 next build`.
+
 ## Layout
 
 ```

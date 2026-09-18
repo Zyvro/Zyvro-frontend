@@ -27,4 +27,35 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+// La configuration est une fonction, et c'est là que le garde se tient.
+//
+// Next la charge quelle que soit la commande — `next dev`, `next build`,
+// `next start`, avec ou sans npm — et c'est la seule chose dont on soit sûr.
+// La vérification vivait dans `prebuild`, donc npm l'appelait pour
+// `npm run build` et pas pour `npx next build`, qui est plus court à taper.
+// C'est par là que la migration vers Next 16 a été construite, et le serveur de
+// développement d'à côté a perdu ses fichiers sous les pieds.
+//
+// Un garde qu'on peut contourner sans le savoir protège les jours où l'on n'en
+// a pas besoin.
+//
+// Seulement pendant la phase de construction : `next dev` charge la même
+// configuration, et refuser là serait refuser de démarrer le serveur qu'on
+// protège. Et seulement face à un serveur de DÉVELOPPEMENT — en production
+// c'est `next start` qui occupe ce port, et un déploiement doit passer.
+const PHASE_BUILD = "phase-production-build"
+
+module.exports = async (phase) => {
+  if (phase !== PHASE_BUILD) return nextConfig
+
+  const { devServerVerdict } = await import("./scripts/dev-server-verdict.mjs")
+  const verdict = await devServerVerdict()
+  if (verdict.blocking) {
+    // Une exception plutôt qu'un `process.exit` : Next la montre avec le nom du
+    // fichier qui l'a levée, et quelqu'un qui découvre ce refus a besoin de
+    // savoir d'où il vient.
+    throw new Error(`\n${verdict.message}`)
+  }
+  if (verdict.message) console.log(verdict.message)
+  return nextConfig
+}

@@ -8,53 +8,17 @@
 // le navigateur qu'on a sous les yeux a l'ancienne en cache — et on cherche le
 // bug dans son code pendant que c'est la commande d'à côté qui l'a cassé.
 //
-// C'est arrivé deux fois dans la même journée. La seconde a coûté le temps de
-// comprendre que la première n'était pas un hasard.
-//
-// Ce qu'il ne doit pas faire : refuser un déploiement. En production, c'est
-// `next start` qui occupe ce port, et refuser là-bas transformerait ce garde en
-// formalité qu'on contourne à chaque mise en ligne — un garde qu'on apprend à
-// désactiver ne garde plus rien. Il demande donc au serveur qui écoute ce qu'il
-// est : `next dev` sert une route de développement — la pile d'origine d'une
-// erreur — que `next start` ne connaît pas.
+// C'est arrivé trois fois. La troisième parce que ce garde vivait uniquement
+// ici : `npx next build` ne passe pas par npm, donc personne ne l'appelait. La
+// décision est dans `next.config.js` maintenant, que Next charge quoi qu'on
+// tape ; ce script reste le point d'entrée en ligne de commande, et il garde
+// une raison d'être qui n'est pas cosmétique — `build:prod` fait
+// `rm -rf .next` AVANT d'appeler `next build`, donc un garde qui n'existerait
+// que dans la configuration arriverait après la suppression.
 //
 //     node scripts/check-dev-server.mjs
-import { createConnection } from "node:net"
+import { devServerVerdict } from "./dev-server-verdict.mjs"
 
-const PORT = Number(process.env.PORT || 4101)
-
-const listening = await new Promise((resolve) => {
-  const socket = createConnection({ port: PORT, host: "127.0.0.1" })
-  const answer = (value) => {
-    socket.destroy()
-    resolve(value)
-  }
-  socket.setTimeout(400)
-  socket.on("connect", () => answer(true))
-  socket.on("timeout", () => answer(false))
-  socket.on("error", () => answer(false))
-})
-
-if (!listening) process.exit(0)
-
-// Une route que seul un serveur de développement sert. En production elle rend
-// 404 ; en développement elle rend autre chose — 400 sur une requête sans
-// paramètres, ce qui est une réponse, donc une preuve.
-const dev = await fetch(`http://127.0.0.1:${PORT}/__nextjs_original-stack-frame`)
-  .then((res) => res.status !== 404)
-  .catch(() => true)
-
-if (!dev) {
-  console.log(
-    `Something is listening on ${PORT}, and it is not a dev server: building is what a deploy does.`
-  )
-  process.exit(0)
-}
-
-console.log(
-  `A dev server is listening on ${PORT}. Building now would delete the files it is serving:\n` +
-    `the page keeps loading and its stylesheet starts answering 404, which looks like a bug in the CSS.\n\n` +
-    `  · to check the types instead:  npm run typecheck\n` +
-    `  · to build anyway:             stop the dev server first, or PORT=0 npm run build\n`
-)
-process.exit(1)
+const verdict = await devServerVerdict()
+if (verdict.message) console.log(verdict.message)
+process.exit(verdict.blocking ? 1 : 0)
