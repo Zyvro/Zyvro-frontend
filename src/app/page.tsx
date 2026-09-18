@@ -7,7 +7,7 @@ import { AppleMark, WindowsMark } from "@/components/brand/icons"
 import { FeatureSections } from "@/components/FeatureSections"
 import { LandingShowcase } from "@/components/LandingShowcase"
 import { CTA_ICON, NAV_LINK, PILL_LARGE, PILL_MUTED, PILL_OUTLINE, PILL_PRIMARY } from "@/components/ui/cta"
-import { pageSeo, SITE_CATEGORY, SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo"
+import { pageSeo, SITE_CATEGORY, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = pageSeo({
@@ -86,19 +86,25 @@ export default function HomePage() {
               le monde connaît : un IDE. Le rapprochement n'est pas une image —
               Integrated Development Environment, Agent Development Environment,
               une lettre d'écart, et c'est celle qui dit tout le produit.
-            · **Le logo perd son slogan ici.** « More than prompts » sous un
-              titre qui dit déjà ce que c'est, ce sont deux slogans qui se
-              disputent la même seconde. Le logo à slogan reste la marque
-              partout ailleurs. */}
+            · **Le gros logo à slogan reste en tête**, à la demande de Jeremy.
+              Je l'avais réduit au logo nu en me disant que « More than
+              prompts » et un titre qui dit ce que c'est se disputaient la même
+              seconde. C'est sa marque : elle ouvre la page, et le titre en
+              texte qui suit lui donne son sens plutôt que de lui faire
+              concurrence. */}
         <section className="mx-auto max-w-4xl px-6 pb-16 pt-24 text-center">
           <span className="inline-block rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
             ADE · Agent Development Environment
           </span>
-          <div className="mt-8 flex justify-center">
+          <div className="mt-10 flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/logo-full.png" alt="Zyvro" className="h-9 w-auto drop-shadow-[0_8px_32px_rgba(0,0,0,0.45)] sm:h-11" />
+            <img
+              src="/brand/logo-full-with-slogan.png"
+              alt={`${SITE_NAME} — ${SITE_TAGLINE}`}
+              className="w-full max-w-xl drop-shadow-[0_8px_32px_rgba(0,0,0,0.45)]"
+            />
           </div>
-          <h1 className="mx-auto mt-7 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl">
+          <h1 className="mx-auto mt-8 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl">
             An IDE built around the agent, not beside it
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
