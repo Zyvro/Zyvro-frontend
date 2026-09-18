@@ -18,6 +18,16 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
 
+  // `next dev` écrivait `AGENTS.md` et `CLAUDE.md` à la racine, à chaque
+  // démarrage, et les réécrivait quand on les supprimait. Deux fichiers que
+  // personne ici n'a décidés, qui salissaient l'arbre un jour sur deux et qui
+  // sont une fois entrés dans un commit parlant d'autre chose.
+  //
+  // Éteint à la source plutôt que masqué : c'est le serveur lui-même qui nomme
+  // l'interrupteur dans son journal. Le `.gitignore` les garde tout de même,
+  // par précaution, si un jour ce réglage change de nom.
+  agentRules: false,
+
   // Explore et la boutique listaient la même chose sous deux noms. Il n'en
   // reste qu'une, et l'ancienne adresse redirige plutôt que de renvoyer 404 :
   // elle a été en ligne, elle est dans des favoris et dans l'historique.

@@ -8,11 +8,17 @@ import type { Metadata } from "next"
 // copies d'une même phrase, c'est deux phrases qui finissent fausses.
 
 export const SITE_NAME = "Zyvro"
+// Le slogan de marque — celui qui est cuit dans le logo.
 export const SITE_TAGLINE = "More than prompts"
+// Ce que le produit EST, en trois mots. Un slogan ne dit pas la catégorie, et
+// c'est la catégorie qu'on lit dans un onglet ou un résultat de recherche :
+// « Zyvro — More than prompts » ne laisse pas deviner un éditeur.
+export const SITE_CATEGORY = "Agent Dev Editor"
 
 export const SITE_DESCRIPTION =
-  "Build AI workflows on a canvas and run them on your own provider keys — text, image and vision models, " +
-  "wired together, in the browser or in a desktop app on your machine."
+  "An IDE built around the agent, not beside it. Claude Code, Codex and Qwen run inside the window, on your " +
+  "machine, with your files, your terminal, your git and your own provider keys — beside a canvas where you " +
+  "wire the text, image and vision workflows they can call."
 
 // L'origine publique. Gravée à la compilation comme celle de l'API, et pour la
 // même raison : une URL absolue est obligatoire dans une balise Open Graph, et

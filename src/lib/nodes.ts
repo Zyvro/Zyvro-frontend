@@ -118,7 +118,9 @@ export const BUILT_IN_KINDS: NodeKind[] = [
     outputs: ["video"],
     // resolution and duration are on the node rather than in a deployment
     // default because they are what decides the bill: both backends charge by
-    // the second, and the price per second triples between hd and uhd.
+    // the second, and the rate climbs with the resolution. How much it climbs
+    // is not written down here on purpose — whoever runs this brings their own
+    // account, and a number we copied from a price grid ages badly.
     defaults: { prompt: "", provider: "", model: "", resolution: "", duration: 0, aspectRatio: "", draft: false },
   },
   {

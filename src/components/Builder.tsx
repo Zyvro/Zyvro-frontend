@@ -1706,10 +1706,11 @@ const CONFIG_FIELDS: Record<string, ConfigField[]> = {
     { key: "prompt", label: "Prompt (overrides input)", type: "textarea" },
     { key: "aspectRatio", label: "Aspect ratio", type: "aspectRatio", options: ["1:1", "16:9", "9:16", "4:3", "3:4"], default: "1:1" },
   ],
-  // La vidéo est le seul nœud facturé à la seconde, et le prix par seconde
-  // triple entre la HD et l'UHD. Les deux réglages qui décident de la facture
-  // sont donc ici, visibles, plutôt que dans un défaut de déploiement que
-  // personne ne relit.
+  // La vidéo est le seul nœud facturé à la seconde, et le tarif monte avec la
+  // définition. Les deux réglages qui décident de la facture sont donc ici,
+  // visibles, plutôt que dans un défaut de déploiement que personne ne relit.
+  // De combien il monte n'est écrit nulle part, volontairement : chacun vient
+  // avec son compte, et un chiffre recopié d'une grille vieillit mal.
   generateVideo: [
     { key: "prompt", label: "Prompt (overrides input)", type: "textarea" },
     {

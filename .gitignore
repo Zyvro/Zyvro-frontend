@@ -19,3 +19,12 @@ next-env.d.ts
 npm-debug.log*
 .vscode/
 .idea/
+
+# Écrits par `next dev` lui-même, pas par nous.
+#
+# Éteints à la source — `agentRules: false` dans next.config.js — donc ces deux
+# lignes sont le filet, pas la serrure : si ce réglage change de nom en montant
+# de version, l'arbre ne redevient pas sale en silence. C'est déjà arrivé une
+# fois, et le bruit est entré dans un commit qui parlait d'autre chose.
+AGENTS.md
+CLAUDE.md

@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import type { ReactNode } from "react"
 import { headers } from "next/headers"
-import { OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/seo"
+import { OG_IMAGE, SITE_CATEGORY, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo"
 import "./globals.css"
 import { Providers } from "./providers"
 
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     // Chaque page nomme ce qu'elle est, et la marque est ajoutée ici : sans
     // gabarit, la moitié des onglets s'appelaient « Zyvro » et l'autre moitié
     // oubliait de le dire.
-    default: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    default: `${SITE_NAME} — ${SITE_CATEGORY}`,
     template: `%s — ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -30,14 +30,14 @@ export const metadata: Metadata = {
     type: "website",
     siteName: SITE_NAME,
     url: SITE_URL,
-    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    title: `${SITE_NAME} — ${SITE_CATEGORY}`,
     description: SITE_DESCRIPTION,
     locale: "en",
     images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    title: `${SITE_NAME} — ${SITE_CATEGORY}`,
     description: SITE_DESCRIPTION,
     images: [OG_IMAGE],
   },

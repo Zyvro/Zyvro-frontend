@@ -7,11 +7,13 @@ import { AppleMark, WindowsMark } from "@/components/brand/icons"
 import { FeatureSections } from "@/components/FeatureSections"
 import { LandingShowcase } from "@/components/LandingShowcase"
 import { CTA_ICON, NAV_LINK, PILL_LARGE, PILL_MUTED, PILL_OUTLINE, PILL_PRIMARY } from "@/components/ui/cta"
-import { pageSeo, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/seo"
+import { pageSeo, SITE_CATEGORY, SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = pageSeo({
-  title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+  // La catégorie, pas le slogan : c'est le titre de l'onglet et la ligne bleue
+  // d'un résultat de recherche, donc la même seconde que le héros.
+  title: `${SITE_NAME} — ${SITE_CATEGORY}`,
   description: SITE_DESCRIPTION,
   path: "/",
   absoluteTitle: true,
@@ -61,17 +63,43 @@ export default function HomePage() {
         />
         <div className="pointer-events-none absolute left-1/2 top-[-10rem] -z-10 h-[28rem] w-[48rem] -translate-x-1/2 rounded-full bg-primary/20 blur-[120px]" />
 
+        {/* Le héros doit dire ce que c'est, en une seconde.
+            (Repris le 18/09, sur le retour de Jeremy : « il faut surtout revoir
+            la hero banner pour comprendre que c'est un ADE, Agent Dev Editor.
+            C'est ce qui fait comprendre en 1 sec ce que l'outil est. »)
+
+            Ce qu'il disait avant : « Visual AI workflows », un logo, et un
+            paragraphe sur le câblage de modèles. Quelqu'un qui arrive en
+            conclut « encore un constructeur de workflows » et repart — le mot
+            éditeur n'apparaissait nulle part, alors que c'est l'outil.
+
+            Trois choses ont changé :
+
+            · **Le titre est du texte, pas une image.** Le seul grand caractère
+              de la page était le slogan cuit dans le PNG de marque. Un titre
+              dans un bitmap ne se lit pas par un moteur de recherche, ne se
+              coupe pas sur un téléphone et ne se traduit pas.
+            · **La catégorie d'abord, le détail ensuite.** ADE est un mot que
+              personne ne connaît encore, donc il arrive adossé à celui que tout
+              le monde connaît : un IDE.
+            · **Le logo perd son slogan ici.** « More than prompts » sous un
+              titre qui dit déjà ce que c'est, ce sont deux slogans qui se
+              disputent la même seconde. Le logo à slogan reste la marque
+              partout ailleurs. */}
         <section className="mx-auto max-w-4xl px-6 pb-16 pt-24 text-center">
           <span className="inline-block rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            Visual AI workflows · bring your own keys
+            ADE · Agent Dev Editor
           </span>
-          <div className="mt-10 flex justify-center">
+          <div className="mt-8 flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/logo-full-with-slogan.png" alt="Zyvro — build AI agents on a canvas, run them anywhere" className="w-full max-w-xl drop-shadow-[0_8px_32px_rgba(0,0,0,0.45)]" />
+            <img src="/brand/logo-full.png" alt="Zyvro" className="h-9 w-auto drop-shadow-[0_8px_32px_rgba(0,0,0,0.45)] sm:h-11" />
           </div>
-          <p className="mx-auto mt-8 max-w-2xl text-lg text-muted-foreground">
-            Wire text, image and vision models into reusable workflows. The canvas defines what the agent can do. The Brain decides how to use it at
-            runtime.
+          <h1 className="mx-auto mt-7 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl">
+            An IDE built around the agent, not beside it
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
+            Claude Code, Codex and Qwen run <em className="not-italic text-foreground">inside</em> the window, on your machine — with your files, your
+            terminal, your git and your own keys. Beside them, a canvas where you wire the workflows they can call.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-2.5 sm:flex-row sm:gap-3">
             <Link href="/signup" className={cn(PILL_PRIMARY, PILL_LARGE, "w-full sm:w-auto")}>

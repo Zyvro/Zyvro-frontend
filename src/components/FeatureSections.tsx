@@ -253,9 +253,20 @@ function Shot({ feature, cap }: { feature: Feature; cap?: boolean }) {
 export function FeatureSections() {
   return (
     <div className="space-y-28 py-8 sm:space-y-36">
-      {/* La première section est large et seule : c'est le produit lui-même,
-          et une capture du canvas dit en une seconde ce qu'un paragraphe met
-          trois phrases à expliquer. */}
+      {/* L'éditeur d'abord : c'est ce que le héros vient de promettre.
+          (Remis dans cet ordre le 18/09 avec la reprise du héros.)
+
+          Le canvas était en tête parce qu'il passait pour « le produit
+          lui-même ». Il ne l'est plus : quelqu'un à qui l'on vient d'annoncer
+          un éditeur et à qui l'on montre d'abord un graphe de nœuds conclut
+          qu'on lui a vendu un constructeur de workflows, et la promesse du
+          héros meurt au premier défilement. On montre la fenêtre, puis ce
+          qu'elle a en plus des autres. */}
+      <ModeShowcase />
+
+      {/* Et le canvas juste après, parce que c'est ce « en plus » : une
+          capture du canvas dit en une seconde ce qu'un paragraphe met trois
+          phrases à expliquer. */}
       <section className="mx-auto max-w-6xl px-6 text-center">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/90">The canvas</p>
         <h2 className="mx-auto mt-4 max-w-3xl text-3xl font-semibold leading-[1.12] tracking-tight sm:text-[2.75rem]">
@@ -284,11 +295,7 @@ export function FeatureSections() {
         </div>
       </section>
 
-      {/* Juste après le canvas, parce que c'est la deuxième chose qu'on ne
-          voyait pas : ce qu'on télécharge est un éditeur, et il a deux
-          dispositions. Le reste de la page montre des panneaux ; celle-ci
-          montre la fenêtre. */}
-      <ModeShowcase />
+
 
       {FEATURES.map((f) =>
         f.wide ? (
