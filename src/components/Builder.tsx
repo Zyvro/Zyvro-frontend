@@ -1398,6 +1398,22 @@ function PropertiesPanel({
           </div>
         )}
 
+        {/* Nommer la sortie d'après l'entrée.
+            Écrit ici plutôt que laissé à deviner : le moteur sait le faire
+            depuis le 18/09, et un motif que personne ne connaît n'existe pas.
+            La liste est celle que `engine/provenance.go` remplace — et c'est le
+            moteur qui refuse quand rien en amont n'a lu de fichier, pas ce
+            panneau : une deuxième règle ici serait la deuxième qui a tort. */}
+        {nodeType === "fileOutput" && (
+          <div className="rounded-lg border border-white/10 bg-white/[0.04] p-2.5 text-[11px] leading-snug text-foreground/80">
+            Name the file after the one that was read: <code className="font-mono">{"{{sourceName}}"}</code>{" "}
+            <code className="font-mono">{"{{sourceStem}}"}</code> <code className="font-mono">{"{{sourceExt}}"}</code>{" "}
+            <code className="font-mono">{"{{sourceDir}}"}</code> <code className="font-mono">{"{{sourcePath}}"}</code>. A file input anywhere upstream
+            is what fills them — <code className="font-mono">{"out/{{sourceStem}}-hd{{sourceExt}}"}</code> turns{" "}
+            <code className="font-mono">sprites/53013.png</code> into <code className="font-mono">out/53013-hd.png</code>.
+          </div>
+        )}
+
         {fields.map((f) => (
           <Field key={f.key} label={f.label}>
             {f.type === "path" ? (
