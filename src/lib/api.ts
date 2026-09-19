@@ -256,7 +256,14 @@ export const api = {
     }),
 
   listProviders: () =>
-    request<{ providers: ProviderInfo[]; order: Record<string, string[]> | null }>("/api/providers"),
+    request<{
+      providers: ProviderInfo[]
+      order: Record<string, string[]> | null
+      // Where the local engine keeps keys and server addresses. Absent on the
+      // hosted API, which has an account instead of a machine — so the panel
+      // only mentions it when there is something to mention.
+      machine_dir?: string
+    }>("/api/providers"),
 
   // The order this account wants its providers tried in, per job. Only sent
   // when there is something to order: an account with one credential for a job
@@ -846,6 +853,12 @@ export type ProviderSecret = {
   provider: string
   secret_last4: string
   updated_at: string
+  /**
+   * Where this credential is kept, on the desktop: "machine" for the one every
+   * project shares, "project" for one only this folder has. Absent on the
+   * hosted API, which has one account and no such question.
+   */
+  scope?: "machine" | "project"
 }
 
 export type ApiKey = {

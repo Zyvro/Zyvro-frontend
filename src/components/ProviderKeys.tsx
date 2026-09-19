@@ -626,6 +626,12 @@ export function ProviderKeys({ compact = false }: { compact?: boolean }) {
 
   const providers = data.providers
   const order = data.order ?? {}
+  // Dit plutôt que deviné. Les clefs et les adresses sont passées du projet à
+  // la machine parce que les retaper à chaque dossier ouvert était, mot de
+  // Jeremy, « l'enfer » — mais un réglage qui change de place sans le dire est
+  // un réglage qu'on cherche. La phrase n'apparaît que là où elle a un sens :
+  // l'API hébergée a un compte, pas une machine, et n'envoie pas ce champ.
+  const machineDir = data.machine_dir
 
   // The dialog reads from the query, so it always shows the current state even
   // after a save changes it underneath.
@@ -644,6 +650,13 @@ export function ProviderKeys({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className={compact ? "space-y-4" : "space-y-6"}>
+      {machineDir && (
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          Keys and server addresses are kept for this machine, in{" "}
+          <code className="font-mono text-[10px] text-foreground/80">{machineDir}</code> — every project you open uses
+          them, so this is set up once.
+        </p>
+      )}
       {CATEGORIES.map((cat) => {
         const list = ordered(
           providers.filter((p) => p.roles.includes(cat.role)),
