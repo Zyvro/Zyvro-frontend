@@ -114,6 +114,33 @@ export function useSecrets() {
   })
 }
 
+// A batch settles on its own schedule — minutes, or hours for 519 sprites — so
+// it is polled while it runs and left alone once it has finished. Server state
+// through TanStack Query rather than a timer in an effect: this is exactly the
+// case the doctrine names.
+export function useBatch(batchId: string | null) {
+  return useQuery({
+    queryKey: qk.batch(batchId || ""),
+    queryFn: () => api.getBatch(batchId!),
+    enabled: Boolean(batchId),
+    refetchInterval: (query) => {
+      const status = query.state.data?.batch.status
+      return status === "queued" || status === "running" ? 1000 : false
+    },
+    // Et il continue de tourner quand la fenêtre n'est pas au premier plan.
+    // C'est la seule option par défaut qui ne convient pas ici : un lot est
+    // exactement la chose qu'on lance avant de partir faire autre chose, et
+    // par défaut l'intervalle saute ses tours tant que la fenêtre est cachée —
+    // mesuré dans l'application, le compteur restait à « 0 sur 4 » alors que
+    // les quatre fichiers étaient écrits. Le bureau de macOS considère comme
+    // cachée une fenêtre simplement recouverte par une autre, et le poste
+    // desktop n'a pas le rattrapage au retour du focus : il le coupe
+    // (`refetchOnWindowFocus: false`). Une requête par seconde vers un démon
+    // en boucle locale est le bon prix pour un panneau qui dit vrai.
+    refetchIntervalInBackground: true,
+  })
+}
+
 export function useLastExecution(workflowId: string | undefined) {
   return useQuery({
     queryKey: qk.lastExecution(workflowId || ""),

@@ -187,6 +187,34 @@ export const api = {
   listWorkflowExecutions: (workflowId: string) =>
     request<Execution[]>(`/api/workflows/${workflowId}/executions`),
 
+  // Batches. Local engine only: every one of these 404s on the hosted API,
+  // which is why the UI that calls them is behind the same check as the file
+  // nodes — there is no project folder to list on a server.
+  runBatch: (workflowId: string, req: BatchRequest) =>
+    request<{ batch_id: string; total: number; status: string }>("/api/batches", {
+      method: "POST",
+      body: JSON.stringify({
+        workflow_id: workflowId,
+        input: req.input,
+        ...(req.dir !== undefined ? { dir: req.dir } : {}),
+        ...(req.match ? { match: req.match } : {}),
+        ...(req.recursive ? { recursive: true } : {}),
+        ...(req.paths ? { paths: req.paths } : {}),
+        ...(req.inputs ? { inputs: req.inputs } : {}),
+        ...(req.maxItems ? { max_items: req.maxItems } : {}),
+      }),
+    }),
+  getBatch: (id: string) => request<BatchResponse>(`/api/batches/${id}`),
+  // Resumes by default: what completed is not paid for twice. restart redoes all.
+  retryBatch: (id: string, restart = false) =>
+    request<{ batch_id: string; retried: number; status: string }>(`/api/batches/${id}/retry`, {
+      method: "POST",
+      body: JSON.stringify({ restart }),
+    }),
+  cancelBatch: (id: string) =>
+    request<{ ok: boolean; stopping: boolean }>(`/api/batches/${id}/cancel`, { method: "POST" }),
+  listWorkflowBatches: (workflowId: string) => request<BatchRow[]>(`/api/workflows/${workflowId}/batches`),
+
   listChats: () => request<Chat[]>("/api/chats"),
   createChat: (title?: string) =>
     request<Chat>("/api/chats", { method: "POST", body: JSON.stringify({ title: title ?? "" }) }),
@@ -663,12 +691,64 @@ export type QueueInfo = {
 export type Execution = {
   id: string
   workflow_id: string
+  // Set when this run is one item of a batch. It is the grouping key: 519 runs
+  // stay 519 runs, and one line stands for them.
+  batch_id?: string
   status: "queued" | "running" | "completed" | "failed" | "cancelled"
   output_json?: string
   error?: string
   started_at?: string
   finished_at?: string
   created_at: string
+}
+
+// A batch is one workflow run over many files: the same graph, once per file,
+// with one input carrying the path each time. It only exists on a local engine
+// — it lists a folder, and there is no folder on the hosted API.
+export type BatchCounts = {
+  total: number
+  pending: number
+  running: number
+  completed: number
+  failed: number
+  cancelled: number
+}
+
+export type BatchItem = {
+  path: string
+  execution_id?: string
+  status: "pending" | "running" | "completed" | "failed" | "cancelled"
+  error?: string
+}
+
+export type Batch = {
+  id: string
+  workflow_id: string
+  input: string
+  dir?: string
+  match?: string
+  recursive?: boolean
+  status: "queued" | "running" | "completed" | "failed" | "cancelled"
+  error?: string
+  items: BatchItem[]
+  created_at: string
+  started_at?: string
+  finished_at?: string
+}
+
+export type BatchResponse = { batch: Batch; counts: BatchCounts }
+
+// The history row: a batch without its items, which is what a list shows.
+export type BatchRow = Omit<Batch, "items"> & { counts: BatchCounts }
+
+export type BatchRequest = {
+  input: string
+  dir?: string
+  match?: string
+  recursive?: boolean
+  paths?: string[]
+  inputs?: Record<string, unknown>
+  maxItems?: number
 }
 
 export type NodeExecution = {

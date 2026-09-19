@@ -24,9 +24,11 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronLeft,
+  FolderOpen,
   Globe,
   Hand,
   Hourglass,
+  Layers,
   LayoutGrid,
   Loader2,
   Map as MapIcon,
@@ -36,6 +38,7 @@ import {
   MousePointer2,
   Plus,
   Play,
+  RotateCcw,
   Search,
   Settings,
   UserRoundPlus,
@@ -45,8 +48,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ShareDialog } from "@/components/ShareDialog"
-import { useLastExecution, useMe, useUpdateWorkflow, useWorkflow } from "@/lib/hooks"
-import { api, ApiError, ExecutionResponse, Graph, GraphEdge, GraphNode, MissingProviderKeys, QueueInfo, localOnlyNodes, unknownNode,
+import { useBatch, useLastExecution, useMe, useUpdateWorkflow, useWorkflow } from "@/lib/hooks"
+import { api, ApiError, BatchResponse, ExecutionResponse, Graph, GraphEdge, GraphNode, MissingProviderKeys, QueueInfo, localOnlyNodes, unknownNode,
   missingProviderKeys } from "@/lib/api"
 import {
   inputHandleIds,
@@ -105,6 +108,20 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
   const [search, setSearch] = useState("")
   const [runtimeInputs, setRuntimeInputs] = useState<Record<string, string>>({})
   const [showRunPanel, setShowRunPanel] = useState(false)
+  // Un lot : le même graphe lancé une fois par fichier d'un dossier.
+  //
+  // Il n'ajoute pas une seconde liste d'entrées à remplir — c'est la liste
+  // existante, dont l'une des entrées est pilotée par le dossier au lieu d'une
+  // valeur. Le nom retenu ici est celui de cette entrée-là ; les autres gardent
+  // leur valeur et la même pour toutes les exécutions.
+  const [batchInput, setBatchInput] = useState<string | null>(null)
+  const [batchDir, setBatchDir] = useState("")
+  const [batchMatch, setBatchMatch] = useState("")
+  const [batchRecursive, setBatchRecursive] = useState(false)
+  const [batchId, setBatchId] = useState<string | null>(null)
+  const [batchError, setBatchError] = useState("")
+  const [batchBusy, setBatchBusy] = useState(false)
+  const batchState = useBatch(batchId)
   const [palette, setPalette] = useState<PaletteFilter | null>(null)
   const [tool, setTool] = useState<CanvasTool>("select")
   const [zoom, setZoom] = useState(1)
@@ -479,6 +496,69 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
     }
   }
 
+  // Un lot ne s'affiche que là où il y a un dossier de projet : il en liste un,
+  // et il n'y en a pas sur l'API hébergée. C'est exactement le signal que les
+  // nœuds de fichier utilisent déjà — l'hôte déclare ce qu'il sait faire — donc
+  // pas un second test qui dirait un jour autre chose.
+  const canBatch = Boolean(hostCapabilities().pickProjectFile)
+
+  async function startBatch() {
+    if (!workflow || !batchInput) return
+    setBatchError("")
+    setBatchBusy(true)
+    try {
+      // Sauver avant de lancer, comme un run : 519 exécutions du graphe d'hier
+      // seraient 519 fichiers à refaire.
+      const g = { nodes: fromFlowNodes(nodes), edges: fromFlowEdges(edges) }
+      await api.updateWorkflow(workflow.id, { name, graph_json: g })
+      lastSavedRef.current = serialize(name, nodes, edges)
+      setSaveState("saved")
+      // Les autres entrées gardent leur valeur, la même pour toutes les
+      // exécutions ; celle du lot est remplie par le pilote, fichier par
+      // fichier, et ce qu'on aurait tapé dedans serait faux pour 518 d'entre
+      // elles.
+      const shared: Record<string, unknown> = {}
+      for (const def of inputDefs) {
+        if (def.key === batchInput) continue
+        const v = runtimeInputs[def.key]
+        if (v) shared[def.key] = v
+      }
+      const res = await api.runBatch(workflow.id, {
+        input: batchInput,
+        dir: batchDir.trim(),
+        match: batchMatch.trim(),
+        recursive: batchRecursive,
+        inputs: shared,
+      })
+      setBatchId(res.batch_id)
+      setShowRunPanel(false)
+    } catch (err) {
+      // Le refus reste sous les yeux, dans le panneau où l'on vient de choisir
+      // le dossier : il dit ce qui ne va pas de ce choix-là.
+      setBatchError(err instanceof Error ? err.message : "The batch was refused")
+    } finally {
+      setBatchBusy(false)
+    }
+  }
+
+  const batchDraft: BatchDraft = {
+    can: canBatch,
+    input: batchInput,
+    dir: batchDir,
+    match: batchMatch,
+    recursive: batchRecursive,
+    error: batchError,
+    busy: batchBusy,
+    setInput: (key) => {
+      setBatchInput(key)
+      setBatchError("")
+    },
+    setDir: setBatchDir,
+    setMatch: setBatchMatch,
+    setRecursive: setBatchRecursive,
+    run: () => void startBatch(),
+  }
+
   const selectedNode = nodes.find((n) => n.id === selectedId)
   // The available node set can grow while the editor is open, when a pack is
   // installed, so it is read from the store rather than captured once.
@@ -790,6 +870,14 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
           />
         )}
 
+        {/* Les deux panneaux de droite vivent dans la même colonne, en flux.
+            Mesuré dans l'application avant d'être écrit : posés chacun en
+            absolu — l'un en haut, l'autre en bas — ils se recouvraient de cent
+            pixels dans un onglet d'éditeur, et le bouton « Run over the folder »
+            se retrouvait sous le panneau du lot, donc incliquable. La colonne
+            ne laisse pas passer les clics là où elle est vide. */}
+        {(showRunPanel || (batchId && batchState.data)) && (
+        <div className="pointer-events-none absolute bottom-3 right-3 top-16 z-40 flex w-96 flex-col gap-2">
         {showRunPanel && (
           <RunPanel
             defs={inputDefs}
@@ -804,10 +892,44 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
               setShowRunPanel(false)
               setSelectedId(nodeId)
             }}
+            batch={batchDraft}
             mcpHint={`zyvro_run_workflow {"workflow_id": "${workflow?.id || ""}", "inputs": {${inputDefs
               .map((d) => `"${d.key}": ${d.type === "image" ? '"<data URL or http URL>"' : '"..."'}`)
               .join(", ")}}}`}
           />
+        )}
+
+        {batchId && batchState.data && (
+          <BatchPanel
+            data={batchState.data}
+            busy={batchBusy}
+            onClose={() => {
+              // Fermer la fenêtre n'arrête pas le lot — il n'est pas à nous, il
+              // tourne dans le moteur — et le rouvrir n'existe pas encore : le
+              // bouton ne s'affiche donc qu'une fois le lot fini.
+              setBatchId(null)
+            }}
+            onCancel={async () => {
+              setBatchBusy(true)
+              try {
+                await api.cancelBatch(batchId)
+                await batchState.refetch()
+              } finally {
+                setBatchBusy(false)
+              }
+            }}
+            onResume={async () => {
+              setBatchBusy(true)
+              try {
+                await api.retryBatch(batchId)
+                await batchState.refetch()
+              } finally {
+                setBatchBusy(false)
+              }
+            }}
+          />
+        )}
+        </div>
         )}
 
         {/* Node palette flyout */}
@@ -1183,6 +1305,7 @@ function RunPanel({
   onClose,
   onRun,
   onReveal,
+  batch,
   mcpHint,
 }: {
   defs: RuntimeInputDef[]
@@ -1192,12 +1315,15 @@ function RunPanel({
   onClose: () => void
   onRun: () => void
   onReveal: (nodeId: string) => void
+  batch: BatchDraft
   mcpHint: string
 }) {
-  const missing = defs.filter((d) => !d.hasDefault && !values[d.key])
+  // L'entrée pilotée par le dossier n'est pas « manquante » : c'est le pilote
+  // qui la remplit, une fois par fichier.
+  const missing = defs.filter((d) => d.key !== batch.input && !d.hasDefault && !values[d.key])
   const [copied, setCopied] = useState(false)
   return (
-    <div className="panel absolute right-3 top-16 z-40 flex max-h-[calc(100%-9rem)] w-96 flex-col overflow-hidden">
+    <div className="panel pointer-events-auto flex max-h-full min-h-0 w-full flex-col overflow-hidden">
       <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
         <div>
           <div className="text-sm font-semibold">Run inputs</div>
@@ -1240,15 +1366,31 @@ function RunPanel({
 
         {defs.map((d) => (
           <div key={d.key} className="space-y-1.5">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <label className="font-mono text-[11px] font-semibold text-primary-foreground/90">
                 {"{"}{d.key}{"}"}
               </label>
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                {d.type} · {d.hasDefault ? "optional" : "required"}
-              </span>
+              <div className="flex items-center gap-2">
+                {/* Le seul geste qui fait passer d'une exécution à un lot, et il
+                    est ici plutôt qu'ailleurs parce que la question est « d'où
+                    vient cette valeur » : d'une case, ou d'un dossier. */}
+                {batch.can && d.type === "text" && (
+                  <button
+                    className="text-[10px] text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-foreground"
+                    onClick={() => batch.setInput(batch.input === d.key ? null : d.key)}
+                    title="Run this workflow once per file in a folder, this input carrying each path"
+                  >
+                    {batch.input === d.key ? "one value" : "from a folder"}
+                  </button>
+                )}
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {d.type} · {d.hasDefault ? "optional" : "required"}
+                </span>
+              </div>
             </div>
-            {d.type === "text" ? (
+            {batch.input === d.key ? (
+              <BatchFields batch={batch} />
+            ) : d.type === "text" ? (
               <textarea
                 className="min-h-20 w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm leading-relaxed placeholder:text-muted-foreground/70 focus:border-primary/70 focus:outline-none focus:ring-2 focus:ring-primary/25"
                 placeholder={d.hasDefault ? "Leave empty to use the node's default" : `Value for ${d.label || d.key}`}
@@ -1284,11 +1426,191 @@ function RunPanel({
       </div>
       <div className="flex items-center justify-between gap-2 border-t border-white/[0.06] p-3">
         <span className="text-[11px] text-muted-foreground">
-          {missing.length > 0 ? `${missing.length} required input${missing.length > 1 ? "s" : ""} missing` : "Ready"}
+          {batch.error ? (
+            <span className="text-red-300">{batch.error}</span>
+          ) : missing.length > 0 ? (
+            `${missing.length} required input${missing.length > 1 ? "s" : ""} missing`
+          ) : batch.input ? (
+            `One run per file, ${batch.input} carrying the path`
+          ) : (
+            "Ready"
+          )}
         </span>
-        <Button onClick={onRun} disabled={missing.length > 0}>
-          <Play /> Run
-        </Button>
+        {batch.input ? (
+          <Button onClick={batch.run} disabled={missing.length > 0 || batch.busy}>
+            {batch.busy ? <Loader2 className="zy-spin" /> : <Layers />} Run over the folder
+          </Button>
+        ) : (
+          <Button onClick={onRun} disabled={missing.length > 0}>
+            <Play /> Run
+          </Button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Ce qu'il faut savoir d'un lot avant de le lancer, et rien de plus : où
+// chercher, quoi garder, jusqu'où descendre. Le nom de l'entrée n'y est pas —
+// c'est celle sous laquelle ce bloc est ouvert.
+type BatchDraft = {
+  can: boolean
+  input: string | null
+  dir: string
+  match: string
+  recursive: boolean
+  error: string
+  busy: boolean
+  setInput: (key: string | null) => void
+  setDir: (v: string) => void
+  setMatch: (v: string) => void
+  setRecursive: (v: boolean) => void
+  run: () => void
+}
+
+function BatchFields({ batch }: { batch: BatchDraft }) {
+  const pick = hostCapabilities().pickProjectFile
+  return (
+    <div className="space-y-2 rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
+      <p className="text-[11px] leading-relaxed text-muted-foreground">
+        One run per file, each one getting that file&apos;s path here. An output path written with{" "}
+        <code className="font-mono text-[10px] text-foreground/80">{"{{sourceStem}}"}</code> then names what it wrote
+        after what it read.
+      </p>
+      <div className="flex gap-2">
+        <Input
+          className="h-8 text-xs"
+          placeholder="Folder, e.g. sprites/abyssal — empty is the whole project"
+          value={batch.dir}
+          onChange={(e) => batch.setDir(e.target.value)}
+        />
+        {pick && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            onClick={async () => {
+              const chosen = await pick({ directory: true, title: "Folder to run over", current: batch.dir })
+              if (chosen !== null) batch.setDir(chosen)
+            }}
+          >
+            <FolderOpen /> Browse
+          </Button>
+        )}
+      </div>
+      <div className="flex items-center gap-3">
+        <Input
+          className="h-8 flex-1 text-xs"
+          placeholder="Match, e.g. *.png — empty is every file"
+          value={batch.match}
+          onChange={(e) => batch.setMatch(e.target.value)}
+        />
+        <label className="flex shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+          <input
+            type="checkbox"
+            className="accent-primary"
+            checked={batch.recursive}
+            onChange={(e) => batch.setRecursive(e.target.checked)}
+          />
+          Subfolders
+        </label>
+      </div>
+    </div>
+  )
+}
+
+// Une ligne pour 519 exécutions. Elles existent toutes — chacune est dans
+// l'historique, isolée, avec son propre résultat — mais ce qu'on regarde
+// pendant qu'un lot tourne, c'est combien sont passées et lesquelles ont raté.
+function BatchPanel({
+  data,
+  busy,
+  onClose,
+  onCancel,
+  onResume,
+}: {
+  data: BatchResponse
+  busy: boolean
+  onClose: () => void
+  onCancel: () => void
+  onResume: () => void
+}) {
+  const { batch: b, counts: c } = data
+  const live = b.status === "queued" || b.status === "running"
+  const settled = c.completed + c.failed + c.cancelled
+  const left = c.total - c.completed
+  const failures = b.items.filter((i) => i.status === "failed").slice(0, 3)
+  const where = b.dir ? b.dir : "the project folder"
+  return (
+    <div className="panel pointer-events-auto mt-auto flex max-h-[60%] w-full shrink-0 flex-col overflow-hidden">
+      <div className="flex items-start justify-between gap-2 border-b border-white/[0.06] px-4 py-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 text-sm font-semibold">
+            <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+            Run over a folder
+          </div>
+          <div className="truncate text-[11px] text-muted-foreground">
+            {where}
+            {b.match ? ` · ${b.match}` : ""} · <span className="font-mono">{b.input}</span>
+          </div>
+        </div>
+        {/* Fermer pendant que ça tourne cacherait le seul endroit qui le
+            montre, et le lot continuerait sans rien à l'écran. */}
+        {!live && (
+          <button onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:bg-white/[0.06] hover:text-foreground">
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-3 overflow-y-auto p-4">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
+          <div
+            className={cn("h-full rounded-full transition-all", c.failed > 0 ? "bg-red-400/70" : "bg-primary")}
+            style={{ width: `${c.total === 0 ? 0 : Math.round((settled / c.total) * 100)}%` }}
+          />
+        </div>
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+          {live && <Loader2 className="h-3 w-3 zy-spin" />}
+          <span>
+            {c.completed} of {c.total} done
+            {c.failed > 0 ? ` · ${c.failed} failed` : ""}
+            {c.cancelled > 0 ? ` · ${c.cancelled} not run` : ""}
+          </span>
+        </div>
+
+        {failures.length > 0 && (
+          <div className="space-y-1.5 rounded-lg border border-red-400/20 bg-red-500/[0.06] p-3">
+            {failures.map((f) => (
+              <div key={f.path} className="min-w-0">
+                <div className="truncate font-mono text-[10px] text-foreground/80">{f.path}</div>
+                <div className="text-[11px] leading-relaxed text-red-200/80">{f.error}</div>
+              </div>
+            ))}
+            {c.failed > failures.length && (
+              <div className="text-[10px] text-muted-foreground">and {c.failed - failures.length} more</div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between gap-2 border-t border-white/[0.06] p-3">
+        <span className="text-[11px] text-muted-foreground">
+          {live ? "Running one file at a time" : b.status === "completed" ? "Every file is done" : b.error || b.status}
+        </span>
+        {live ? (
+          <Button variant="outline" size="sm" onClick={onCancel} disabled={busy}>
+            Stop
+          </Button>
+        ) : (
+          left > 0 && (
+            // Reprendre, pas recommencer : ce qui est écrit est écrit, et une
+            // partie a été payée à un modèle.
+            <Button size="sm" onClick={onResume} disabled={busy}>
+              <RotateCcw /> Resume {left}
+            </Button>
+          )
+        )}
       </div>
     </div>
   )

@@ -10,6 +10,10 @@
 export type FilePickRequest = {
   // save is true when the path is a destination that need not exist yet.
   save?: boolean
+  // directory asks for a folder rather than a file. A batch runs over a folder,
+  // and typing the path of one is the kind of thing that is wrong by a
+  // character and refused with a message about a folder that does not exist.
+  directory?: boolean
   title?: string
   // The current value, so the dialog can open where the user last pointed it.
   current?: string
