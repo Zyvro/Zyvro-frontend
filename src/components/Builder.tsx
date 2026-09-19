@@ -48,8 +48,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ShareDialog } from "@/components/ShareDialog"
-import { useBatch, useLastExecution, useMe, useUpdateWorkflow, useWorkflow } from "@/lib/hooks"
-import { api, ApiError, BatchResponse, ExecutionResponse, Graph, GraphEdge, GraphNode, MissingProviderKeys, QueueInfo, localOnlyNodes, unknownNode,
+import { useBatch, useLastExecution, useMe, useUpdateWorkflow, useWorkflow, useWorkflowBatches } from "@/lib/hooks"
+import { api, ApiError, BatchCounts, BatchResponse, BatchRow, ExecutionResponse, Graph, GraphEdge, GraphNode, MissingProviderKeys, QueueInfo, localOnlyNodes, unknownNode,
   missingProviderKeys } from "@/lib/api"
 import {
   inputHandleIds,
@@ -122,6 +122,10 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
   const [batchError, setBatchError] = useState("")
   const [batchBusy, setBatchBusy] = useState(false)
   const batchState = useBatch(batchId)
+  // Un lot n'appartient pas à cette page : il tourne dans le moteur, et il
+  // survit à la fermeture de l'onglet. Ce qu'on retrouve en revenant, c'est
+  // donc ce que le moteur en dit, pas ce qu'on avait dans une variable.
+  const adoptedBatch = useRef<string | null>(null)
   const [palette, setPalette] = useState<PaletteFilter | null>(null)
   const [tool, setTool] = useState<CanvasTool>("select")
   const [zoom, setZoom] = useState(1)
@@ -502,6 +506,28 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
   // pas un second test qui dirait un jour autre chose.
   const canBatch = Boolean(hostCapabilities().pickProjectFile)
 
+  // Retrouver ce qui tourne encore.
+  //
+  // Mesuré avant d'être écrit : un lot lancé, l'onglet de l'éditeur fermé puis
+  // rouvert, et les 365 fichiers continuaient de s'écrire sans une ligne à
+  // l'écran. C'est exactement la panne qu'on a déjà corrigée pour les boucles
+  // d'agent — « le décompte repartait, de vrais tours tournaient, et l'écran ne
+  // bougeait pas » — et elle coûte ici la même chose : des appels de modèle que
+  // personne ne voit passer.
+  //
+  // L'adoption se fait pendant le rendu, pas dans un effet : c'est un état
+  // dérivé de ce que le serveur vient de dire, et la doctrine le range là. Le
+  // repère retient ce qu'on a déjà adopté, pour qu'un lot refermé à la main ne
+  // se rouvre pas tout seul au rendu suivant.
+  const batchRows = useWorkflowBatches(canBatch ? workflow?.id : undefined)
+  const rows = batchRows.data ?? []
+  const liveBatch = rows.find((b) => b.status === "queued" || b.status === "running")
+  const lastBatch = rows[0]
+  if (batchId === null && liveBatch && adoptedBatch.current !== liveBatch.id) {
+    adoptedBatch.current = liveBatch.id
+    setBatchId(liveBatch.id)
+  }
+
   async function startBatch() {
     if (!workflow || !batchInput) return
     setBatchError("")
@@ -530,8 +556,10 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
         recursive: batchRecursive,
         inputs: shared,
       })
+      adoptedBatch.current = res.batch_id
       setBatchId(res.batch_id)
       setShowRunPanel(false)
+      void batchRows.refetch()
     } catch (err) {
       // Le refus reste sous les yeux, dans le panneau où l'on vient de choisir
       // le dossier : il dit ce qui ne va pas de ce choix-là.
@@ -557,6 +585,15 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
     setMatch: setBatchMatch,
     setRecursive: setBatchRecursive,
     run: () => void startBatch(),
+    // Le dernier lot, et seulement lui : une ligne, pas une liste. Ce qu'on
+    // veut en rouvrant ce panneau, c'est « celui d'hier a fini ? » et surtout
+    // le bouton qui reprend ce qui lui restait — sans quoi « un lot qui casse
+    // au 300ᵉ reprend » ne tient que tant qu'on n'a pas fermé l'onglet.
+    last: batchId === null && lastBatch ? lastBatch : undefined,
+    open: (id: string) => {
+      adoptedBatch.current = id
+      setBatchId(id)
+    },
   }
 
   const selectedNode = nodes.find((n) => n.id === selectedId)
@@ -923,6 +960,7 @@ export default function BuilderPage({ params, embedded = false }: { params: { id
               try {
                 await api.retryBatch(batchId)
                 await batchState.refetch()
+                void batchRows.refetch()
               } finally {
                 setBatchBusy(false)
               }
@@ -1461,11 +1499,27 @@ type BatchDraft = {
   recursive: boolean
   error: string
   busy: boolean
+  // Le dernier lot de ce workflow, quand aucun n'est ouvert. Une ligne, pas une
+  // liste : ce qu'on en veut est « celui d'hier a fini ? » et le bouton qui
+  // reprend ce qui lui restait.
+  last?: BatchRow
   setInput: (key: string | null) => void
   setDir: (v: string) => void
   setMatch: (v: string) => void
   setRecursive: (v: boolean) => void
   run: () => void
+  open: (id: string) => void
+}
+
+// batchSummary est la même phrase partout : dans la ligne du dernier lot et
+// dans le panneau qui le suit. Deux façons de compter les mêmes éléments
+// finiraient par ne pas dire la même chose au même moment.
+function batchSummary(c: BatchCounts): string {
+  return (
+    `${c.completed} of ${c.total} done` +
+    (c.failed > 0 ? ` · ${c.failed} failed` : "") +
+    (c.cancelled > 0 ? ` · ${c.cancelled} not run` : "")
+  )
 }
 
 function BatchFields({ batch }: { batch: BatchDraft }) {
@@ -1515,6 +1569,23 @@ function BatchFields({ batch }: { batch: BatchDraft }) {
           Subfolders
         </label>
       </div>
+      {/* Le lot d'avant. Il est ici parce que c'est ici qu'on pense aux lots,
+          et parce qu'un lot qu'on ne peut pas rouvrir est un lot qu'on ne peut
+          pas reprendre. */}
+      {batch.last && (
+        <button
+          className="flex w-full items-center justify-between gap-2 rounded-md border border-white/[0.06] bg-black/20 px-2 py-1.5 text-left hover:border-white/20"
+          onClick={() => batch.open(batch.last!.id)}
+        >
+          <span className="min-w-0 truncate text-[11px] text-muted-foreground">
+            Last: {batch.last.dir || "the project folder"}
+            {batch.last.match ? ` · ${batch.last.match}` : ""} — {batchSummary(batch.last.counts)}
+          </span>
+          <span className="shrink-0 text-[10px] text-muted-foreground underline decoration-dotted underline-offset-2">
+            open
+          </span>
+        </button>
+      )}
     </div>
   )
 }
@@ -1572,11 +1643,7 @@ function BatchPanel({
         </div>
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
           {live && <Loader2 className="h-3 w-3 zy-spin" />}
-          <span>
-            {c.completed} of {c.total} done
-            {c.failed > 0 ? ` · ${c.failed} failed` : ""}
-            {c.cancelled > 0 ? ` · ${c.cancelled} not run` : ""}
-          </span>
+          <span>{batchSummary(c)}</span>
         </div>
 
         {failures.length > 0 && (

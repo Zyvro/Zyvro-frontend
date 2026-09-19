@@ -141,6 +141,27 @@ export function useBatch(batchId: string | null) {
   })
 }
 
+// Les lots de ce workflow, du plus récent au plus ancien.
+//
+// C'est ce qui rend un lot retrouvable. Sans cette liste, un lot vit dans
+// l'état d'un composant : fermer l'onglet de l'éditeur pendant qu'il tourne le
+// laisse tourner dans le moteur avec rien à l'écran — mesuré, 365 fichiers
+// écrits par un lot que plus rien ne montrait — et un lot interrompu au 300e
+// devient irreprenable, ce qui vide de son sens le seul arbitrage qui comptait.
+//
+// Sondée pendant qu'un lot tourne, et seulement là : le reste du temps, la
+// liste ne change que quand on en lance un, et c'est nous qui le faisons.
+export function useWorkflowBatches(workflowId: string | undefined) {
+  return useQuery({
+    queryKey: qk.workflowBatches(workflowId || ""),
+    queryFn: () => api.listWorkflowBatches(workflowId!),
+    enabled: Boolean(workflowId),
+    refetchInterval: (query) =>
+      query.state.data?.some((b) => b.status === "queued" || b.status === "running") ? 2000 : false,
+    refetchIntervalInBackground: true,
+  })
+}
+
 export function useLastExecution(workflowId: string | undefined) {
   return useQuery({
     queryKey: qk.lastExecution(workflowId || ""),
