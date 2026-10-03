@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useState, type ReactNode } from "react"
 import { Check, Copy } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -21,13 +21,20 @@ type Props = {
   // Compact trims the vertical rhythm for a narrow side panel, where the
   // spacing of a document would waste most of the column.
   compact?: boolean
+  // How a fenced block's code is drawn, when the host has something better than
+  // plain text — the desktop app colours it with the editor's own tokenizer.
+  // It must return React elements, not HTML: the guarantee above holds for it
+  // too. Left out, the code is plain text, as it always was.
+  renderCode?: (code: string, language: string) => ReactNode
 }
 
-export function Markdown({ text, className, compact = false }: Props) {
+const CodeRenderer = createContext<Props["renderCode"] | null>(null)
+
+export function Markdown({ text, className, compact = false, renderCode }: Props) {
   return (
-    <div className={cn("zy-selectable break-words", className)}>
-      {renderBlocks(text, compact)}
-    </div>
+    <CodeRenderer.Provider value={renderCode ?? null}>
+      <div className={cn("zy-selectable break-words", className)}>{renderBlocks(text, compact)}</div>
+    </CodeRenderer.Provider>
   )
 }
 
@@ -322,6 +329,7 @@ function CodeBlock({
   className?: string
 }) {
   const [copied, setCopied] = useState(false)
+  const renderCode = useContext(CodeRenderer)
 
   const copy = useCallback(() => {
     void navigator.clipboard.writeText(code).then(() => {
@@ -347,7 +355,9 @@ function CodeBlock({
         </button>
       </div>
       <pre className="zy-scroll overflow-x-auto px-2.5 py-2">
-        <code className="font-mono text-[12px] leading-relaxed text-foreground/90">{code}</code>
+        <code className="font-mono text-[12px] leading-relaxed text-foreground/90">
+          {renderCode ? renderCode(code, language ?? "") : code}
+        </code>
       </pre>
     </div>
   )
