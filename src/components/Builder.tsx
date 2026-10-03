@@ -2068,11 +2068,12 @@ const CONFIG_FIELDS: Record<string, ConfigField[]> = {
       key: "provider",
       label: "Provider",
       type: "select",
-      // The two -cli entries run the command line tool installed on the
-      // machine, which is how a ChatGPT or Claude subscription drives a node
+      // The -cli entries run the command line tool installed on the machine,
+      // which is how a ChatGPT, Claude or MiMo subscription drives a node
       // without an API key. They only resolve in Zyvro Studio, the desktop app,
-      // where the engine runs beside that installation.
-      options: ["", "ollama", "anthropic", "openai", "claude-cli", "codex-cli"],
+      // where the engine runs beside that installation — and so does `mimo`,
+      // Xiaomi's API, whose key is kept in the desktop's provider settings.
+      options: ["", "ollama", "anthropic", "openai", "mimo", "claude-cli", "codex-cli", "mimo-cli"],
       optionLabels: {
         "": "Deployment default",
         ollama: "Ollama",
@@ -2080,6 +2081,8 @@ const CONFIG_FIELDS: Record<string, ConfigField[]> = {
         openai: "OpenAI API",
         "claude-cli": "Claude CLI (desktop, your subscription)",
         "codex-cli": "Codex CLI (desktop, your subscription)",
+        mimo: "Xiaomi MiMo API (desktop)",
+        "mimo-cli": "MiMo Code CLI (desktop, your MiMo account)",
       },
       default: "",
     },

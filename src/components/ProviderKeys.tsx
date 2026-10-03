@@ -93,7 +93,7 @@ function ProviderIcon({ id }: { id: string }) {
   if (id === "custom") return <EndpointMark className="h-8 w-8 shrink-0" />
   if (id === "custom-image") return <ImageEndpointMark className="h-8 w-8 shrink-0" />
   if (id === "bfl") return <FluxMark className="h-8 w-8 shrink-0" />
-  if (id === "claude-cli" || id === "codex-cli") return <CliMark className="h-8 w-8 shrink-0" />
+  if (id === "claude-cli" || id === "codex-cli" || id === "mimo-cli") return <CliMark className="h-8 w-8 shrink-0" />
   // Il ne reste rien qui tombe ici aujourd'hui. Une initiale dans un rond gris
   // est ce qu'on affiche quand on n'a rien à afficher — c'est une absence, pas
   // une icône — donc elle ne sert plus que de filet pour un fournisseur ajouté
