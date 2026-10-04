@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { BarChart3, Gauge, ListOrdered, Settings2, ShieldAlert, SlidersHorizontal, Users } from "lucide-react"
+import { BarChart3, Bug, Gauge, ListOrdered, Settings2, ShieldAlert, SlidersHorizontal, Users } from "lucide-react"
 import { AppShell } from "@/components/AppShell"
 import { useMe } from "@/lib/hooks"
 import { cn } from "@/lib/utils"
@@ -13,6 +13,7 @@ import { SettingsTab } from "@/components/admin/SettingsTab"
 import { UsersTab } from "@/components/admin/UsersTab"
 import { ExecutionsTab } from "@/components/admin/ExecutionsTab"
 import { AnalyticsTab } from "@/components/admin/AnalyticsTab"
+import { BugReportsTab } from "@/components/admin/BugReportsTab"
 
 // Mount-time navigation without useEffect: the callback ref fires once the
 // (real, visible) redirect node commits, which is when we push to /login.
@@ -37,6 +38,7 @@ const TABS = [
   { id: "users", label: "Users", icon: Users },
   { id: "executions", label: "Executions", icon: Settings2 },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
+  { id: "bugs", label: "Bug reports", icon: Bug },
 ] as const
 
 type TabId = (typeof TABS)[number]["id"]
@@ -48,7 +50,7 @@ function AdminPanel() {
     <div className="space-y-6">
       <section>
         <h1 className="text-2xl font-semibold tracking-tight">Admin</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Operate the queue, tune runtime limits, and manage users and analytics.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Operate the queue, tune runtime limits, manage users and analytics, and read bug reports.</p>
       </section>
 
       <div className="flex gap-1 overflow-x-auto border-b border-white/[0.06] pb-px" role="tablist" aria-label="Admin sections">
@@ -77,6 +79,7 @@ function AdminPanel() {
         {tab === "users" && <UsersTab />}
         {tab === "executions" && <ExecutionsTab />}
         {tab === "analytics" && <AnalyticsTab />}
+        {tab === "bugs" && <BugReportsTab />}
       </div>
     </div>
   )

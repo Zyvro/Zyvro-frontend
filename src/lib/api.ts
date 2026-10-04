@@ -346,6 +346,9 @@ export const api = {
     )
   },
   adminWorkflows: () => request<AdminWorkflow[]>("/api/admin/workflows"),
+  adminBugReports: (limit = 100) => request<{ reports: AdminBugReport[] }>(`/api/admin/bug-reports?limit=${limit}`),
+  adminBugReport: (id: string) =>
+    request<{ report: AdminBugReport; state: unknown }>(`/api/admin/bug-reports/${encodeURIComponent(id)}`),
   adminAnalytics: (days: number) => request<AnalyticsReport>(`/api/admin/analytics?days=${days}`),
   // The live catalogs from each provider, so the model pickers offer what is
   // actually available rather than a free-text field where a typo breaks runs.
@@ -578,6 +581,21 @@ export type AdminUser = {
   created_at: string
   workflows: number
   executions: number
+}
+
+// Un rapport envoyé par le bouton bug de Zyvro Studio. La liste ne porte pas
+// l'état — il pèse jusqu'à 5 Mo — : il arrive avec le rapport seul.
+export type AdminBugReport = {
+  id: string
+  user_id?: string
+  user_email?: string
+  kind: "manual" | "crash"
+  description: string
+  app_version: string
+  platform: string
+  state_bytes: number
+  ip?: string
+  created_at: string
 }
 
 export type AdminExecution = {

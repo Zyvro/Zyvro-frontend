@@ -338,6 +338,25 @@ export function useAdminUpdateUser() {
   })
 }
 
+export function useAdminBugReports(limit: number) {
+  return useQuery({
+    queryKey: qk.adminBugReports(limit),
+    queryFn: () => api.adminBugReports(limit),
+    refetchInterval: 30 * 1000,
+    staleTime: 10 * 1000,
+  })
+}
+
+// Le rapport entier, état compris : demandé seulement quand on l'ouvre.
+export function useAdminBugReport(id: string | null) {
+  return useQuery({
+    queryKey: qk.adminBugReport(id ?? ""),
+    queryFn: () => api.adminBugReport(id as string),
+    enabled: id !== null,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
 export function useAdminExecutions(filters: { status?: string; user_id?: string; workflow_id?: string; limit?: number }) {
   return useQuery({
     queryKey: qk.adminExecutions(JSON.stringify(filters)),
