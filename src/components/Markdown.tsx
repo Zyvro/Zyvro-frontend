@@ -230,7 +230,10 @@ function List({ lines, compact, className }: { lines: string[]; compact: boolean
 function renderItems(items: Item[], from: number, compact: boolean, className?: string): ReactNode {
   if (items.length === 0) return null
   const baseIndent = items[from].indent
-  const nodes: ReactNode[] = []
+  // Chaque entrée garde sa ligne et sa sous-liste à part : la sous-liste se
+  // range DANS le <li> de l'entrée qu'elle suit. L'envelopper dans un second
+  // <li> donnait un <li> dans un <li>, que React signale au démarrage.
+  const entries: { key: string; row: ReactNode; nested: ReactNode[] }[] = []
   let i = from
 
   while (i < items.length && items[i].indent >= baseIndent) {
@@ -240,30 +243,39 @@ function renderItems(items: Item[], from: number, compact: boolean, className?: 
       const start = i
       while (i < items.length && items[i].indent > baseIndent) i++
       const nested = renderItems(items.slice(start, i), 0, compact)
-      const last = nodes.pop()
-      nodes.push(
-        <li key={`n${start}`} className="list-none">
-          {last}
-          <div className="ml-4">{nested}</div>
-        </li>
-      )
+      const last = entries[entries.length - 1]
+      if (last) last.nested.push(nested)
+      else entries.push({ key: `n${start}`, row: null, nested: [nested] })
       continue
     }
     const item = items[i]
-    nodes.push(
-      <li key={i} className="flex gap-2">
-        <span className="select-none text-muted-foreground" aria-hidden>
-          {item.marker}
-        </span>
-        <span className="min-w-0 flex-1 leading-relaxed">{renderInline(item.body.join(" "))}</span>
-      </li>
-    )
+    entries.push({
+      key: String(i),
+      row: (
+        <div className="flex gap-2">
+          <span className="select-none text-muted-foreground" aria-hidden>
+            {item.marker}
+          </span>
+          <span className="min-w-0 flex-1 leading-relaxed">{renderInline(item.body.join(" "))}</span>
+        </div>
+      ),
+      nested: [],
+    })
     i++
   }
 
   return (
     <ul className={cn("space-y-1", className)}>
-      {nodes}
+      {entries.map((entry) => (
+        <li key={entry.key} className="list-none">
+          {entry.row}
+          {entry.nested.map((nested, n) => (
+            <div key={n} className="ml-4 mt-1">
+              {nested}
+            </div>
+          ))}
+        </li>
+      ))}
     </ul>
   )
 }
