@@ -3,13 +3,21 @@
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
+  BookOpen,
   Box,
+  Bug,
+  Code2,
   Copy,
   Download,
   Laptop,
   Loader2,
   LogIn,
   Package,
+  PenLine,
+  Puzzle,
+  Rocket,
+  Sparkles,
+  Wand2,
   SearchIcon,
   ShieldAlert,
   Workflow as WorkflowIcon,
@@ -19,12 +27,18 @@ import { StoreSource } from "@/components/StoreSource"
 import { WorkflowThumb } from "@/components/WorkflowThumb"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { useCopyStoreTemplate, useStorePacks, useStoreTemplates } from "@/lib/storeHooks"
+import {
+  useCopyStoreTemplate,
+  useStorePacks,
+  useStorePlugin,
+  useStorePlugins,
+  useStoreTemplates,
+} from "@/lib/storeHooks"
 import { useMe } from "@/lib/hooks"
 import { runsOnline } from "@/lib/storeRules"
-import type { StorePack, StoreTemplate } from "@/lib/api"
+import type { StoreAgentPlugin, StorePack, StoreTemplate } from "@/lib/api"
 
-type Section = "nodes" | "workflows"
+type Section = "nodes" | "workflows" | "plugins"
 
 // A capability is the one line worth reading before trusting a pack. Most ask
 // for nothing or for llm; the others are worth a second look, so they are
@@ -91,6 +105,136 @@ function PackCard({ pack }: { pack: StorePack }) {
       {reading && (
         <div className="mt-3 border-t border-white/[0.06] pt-3">
           <StoreSource name={pack.name} />
+        </div>
+      )}
+    </article>
+  )
+}
+
+// The icon names a plugin may declare; the server refuses any other value, and
+// an unknown one here (a newer server) still gets the default.
+const PLUGIN_ICONS = {
+  puzzle: Puzzle,
+  sparkles: Sparkles,
+  wand: Wand2,
+  book: BookOpen,
+  bug: Bug,
+  rocket: Rocket,
+  code: Code2,
+  pen: PenLine,
+} as const
+
+function PluginFiles({ name }: { name: string }) {
+  const plugin = useStorePlugin(name)
+  if (plugin.isLoading) {
+    return (
+      <p className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Loader2 className="h-3.5 w-3.5 zy-spin" /> Fetching the files
+      </p>
+    )
+  }
+  if (plugin.isError) {
+    return <p className="text-xs text-destructive">{(plugin.error as Error).message}</p>
+  }
+  const files = plugin.data?.files ?? []
+  if (files.length === 0) {
+    return <p className="text-xs text-muted-foreground">This plugin carries no readable files.</p>
+  }
+  return (
+    <div className="space-y-2">
+      {files.map((file) => (
+        <div key={file.path} className="overflow-hidden rounded-lg border border-white/[0.08] bg-black/40">
+          <div className="border-b border-white/[0.06] px-3 py-1.5">
+            <span className="font-mono text-[11px] text-muted-foreground">{file.path}</span>
+          </div>
+          <pre className="max-h-80 overflow-auto whitespace-pre-wrap px-3 py-2 font-mono text-[11px] leading-relaxed text-foreground/90">
+            {file.code}
+          </pre>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function PluginCard({ plugin }: { plugin: StoreAgentPlugin }) {
+  const [reading, setReading] = useState(false)
+  const Icon = PLUGIN_ICONS[plugin.icon as keyof typeof PLUGIN_ICONS] ?? Puzzle
+  const signed = Boolean(plugin.signature)
+
+  return (
+    <article className="panel p-4">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.04] text-violet-300">
+          <Icon className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="flex flex-wrap items-baseline gap-2">
+            <span className="text-sm font-medium">{plugin.name}</span>
+            <span className="font-mono text-[11px] text-muted-foreground">{plugin.version}</span>
+            <span className="text-[11px] text-muted-foreground">
+              by {plugin.publisher_name || plugin.author || "unknown"}
+            </span>
+            <span
+              className={cn(
+                "rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide",
+                signed ? "bg-emerald-400/15 text-emerald-300" : "bg-white/[0.07] text-muted-foreground"
+              )}
+              title={signed ? "Signed by the publisher's key" : "Published without a signature"}
+            >
+              {signed ? "Signed" : "Unsigned"}
+            </span>
+          </h2>
+          <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">
+            {plugin.description || "No description."}
+          </p>
+
+          {plugin.actions?.length > 0 && (
+            <div className="mt-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70">Actions</p>
+              <ul className="mt-1 space-y-0.5">
+                {plugin.actions.map((a) => (
+                  <li key={a.id} className="text-[12px] leading-relaxed">
+                    <span className="font-medium">{a.label}</span>
+                    {a.description && <span className="text-muted-foreground"> — {a.description}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {plugin.skills?.length > 0 && (
+            <div className="mt-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70">Skills</p>
+              <ul className="mt-1 space-y-0.5">
+                {plugin.skills.map((k) => (
+                  <li key={k.dir} className="text-[12px] leading-relaxed">
+                    <span className="font-medium">{k.name}</span>
+                    {k.description && <span className="text-muted-foreground"> — {k.description}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <p className="mt-3 flex items-start gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[11px] leading-relaxed text-muted-foreground">
+            <Laptop className="mt-0.5 h-3 w-3 shrink-0" />
+            <span>
+              Plugins install from Zyvro Studio: they work through its agent, which the web app
+              cannot run.
+            </span>
+          </p>
+        </div>
+
+        <button
+          className="shrink-0 rounded-lg border border-white/[0.1] px-2.5 py-1.5 text-[12px] text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
+          onClick={() => setReading((r) => !r)}
+        >
+          {reading ? "Hide files" : "Read files"}
+        </button>
+      </div>
+
+      {reading && (
+        <div className="mt-3 border-t border-white/[0.06] pt-3">
+          <PluginFiles name={plugin.name} />
         </div>
       )}
     </article>
@@ -217,14 +361,20 @@ export function StoreBrowser() {
   // c'est le clic qui décide.
   const params = useSearchParams()
   const [section, setSection] = useState<Section>(
-    params.get("tab") === "nodes" ? "nodes" : "workflows"
+    params.get("tab") === "nodes" ? "nodes" : params.get("tab") === "plugins" ? "plugins" : "workflows"
   )
   const [query, setQuery] = useState("")
 
   const packs = useStorePacks(query)
   const templates = useStoreTemplates(query)
-  const active = section === "nodes" ? packs : templates
-  const items = section === "nodes" ? packs.data?.packs ?? [] : templates.data?.templates ?? []
+  const plugins = useStorePlugins(query)
+  const active = section === "nodes" ? packs : section === "plugins" ? plugins : templates
+  const items =
+    section === "nodes"
+      ? packs.data?.packs ?? []
+      : section === "plugins"
+        ? plugins.data?.plugins ?? []
+        : templates.data?.templates ?? []
 
   return (
     <AppShell wide>
@@ -235,14 +385,15 @@ export function StoreBrowser() {
             <h1 className="text-2xl font-semibold tracking-tight">Store</h1>
           </div>
           <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Nodes and workflows other people published, written in Lua. Read the source of anything
+            Nodes, workflows and agent plugins other people published. Nodes are written in Lua,
+            plugins are Markdown skills and prompts for the Studio agent. Read anything
             before you trust it, and install it from Zyvro Studio to run it on your own machine.
           </p>
         </section>
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex rounded-lg border border-white/[0.08] bg-white/[0.02] p-0.5">
-            {(["nodes", "workflows"] as Section[]).map((value) => (
+            {(["nodes", "workflows", "plugins"] as Section[]).map((value) => (
               <button
                 key={value}
                 className={cn(
@@ -251,7 +402,13 @@ export function StoreBrowser() {
                 )}
                 onClick={() => setSection(value)}
               >
-                {value === "nodes" ? <Package className="h-4 w-4" /> : <WorkflowIcon className="h-4 w-4" />}
+                {value === "nodes" ? (
+                  <Package className="h-4 w-4" />
+                ) : value === "plugins" ? (
+                  <Puzzle className="h-4 w-4" />
+                ) : (
+                  <WorkflowIcon className="h-4 w-4" />
+                )}
                 {value}
               </button>
             ))}
@@ -294,11 +451,13 @@ export function StoreBrowser() {
 
         <div
           className={cn(
-            section === "nodes" ? "space-y-3" : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            section === "nodes" || section === "plugins" ? "space-y-3" : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
           )}
         >
           {section === "nodes"
             ? (items as StorePack[]).map((p) => <PackCard key={p.id || p.name} pack={p} />)
+            : section === "plugins"
+            ? (items as StoreAgentPlugin[]).map((p) => <PluginCard key={p.id || p.name} plugin={p} />)
             : (items as StoreTemplate[]).map((t) => (
                 <TemplateCard
                   key={t.id || t.name}

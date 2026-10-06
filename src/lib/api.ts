@@ -463,7 +463,45 @@ export type StoreTemplateDetail = {
   problems?: { name: string; reason: string }[]
 }
 
+// Agent plugins: no executable code, only actions (requests to the agent) and
+// Markdown skills. Every catalogue field is derived server-side from the files.
+export type StorePluginAction = {
+  id: string
+  label: string
+  description: string
+  has_input: boolean
+  skills: "all" | "none"
+}
+
+export type StorePluginSkill = { dir: string; name: string; description: string }
+
+export type StoreAgentPlugin = {
+  id: string
+  name: string
+  version: string
+  description: string
+  author: string
+  icon: string
+  actions: StorePluginAction[]
+  skills: StorePluginSkill[]
+  digest: string
+  // Empty/absent on a plugin published without a signature.
+  signature?: string
+  publisher_key?: string
+  // Only the single-plugin routes carry the files; listings leave them out.
+  files?: { path: string; code: string }[]
+  size_bytes: number
+  publisher_name?: string
+  yanked?: boolean
+  created_at: string
+}
+
 export const store = {
+  plugins: (q = "") =>
+    request<{ plugins: StoreAgentPlugin[]; next_cursor: string }>(
+      `/api/store/plugins${q ? `?q=${encodeURIComponent(q)}` : ""}`
+    ),
+  plugin: (name: string) => request<StoreAgentPlugin>(`/api/store/plugins/${encodeURIComponent(name)}`),
   packs: (q = "") => request<{ packs: StorePack[]; next_cursor: string }>(`/api/store/nodes${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   pack: (name: string) => request<StorePack>(`/api/store/nodes/${encodeURIComponent(name)}`),
   templates: (q = "") =>

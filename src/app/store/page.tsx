@@ -6,9 +6,9 @@ import { pageSeo } from "@/lib/seo"
 // trouve : la coquille est serveur pour annoncer ce qu'elle contient, le
 // parcours reste client.
 export const metadata: Metadata = pageSeo({
-  title: "Store — workflows and node packs",
+  title: "Store — workflows, node packs and agent plugins",
   description:
-    "Ready-made AI workflows and node packs for Zyvro. Copy one into your account and run it on your own provider keys.",
+    "Ready-made AI workflows, node packs and agent plugins for Zyvro. Copy a workflow into your account and run it on your own provider keys; install plugins from Zyvro Studio.",
   path: "/store",
 })
 

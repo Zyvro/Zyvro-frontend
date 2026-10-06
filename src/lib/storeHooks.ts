@@ -8,6 +8,8 @@ import { qk } from "@/lib/qk"
 export const storeKeys = {
   packs: (q: string) => ["store", "packs", q] as const,
   pack: (name: string) => ["store", "pack", name] as const,
+  plugins: (q: string) => ["store", "plugins", q] as const,
+  plugin: (name: string) => ["store", "plugin", name] as const,
   templates: (q: string) => ["store", "templates", q] as const,
   template: (name: string) => ["store", "template", name] as const,
 }
@@ -18,6 +20,20 @@ export function useStorePacks(q = "") {
 
 // useStorePack is only fetched when someone asks to read the code, because the
 // listing deliberately leaves the sources out and they are the large part.
+export function useStorePlugins(q = "") {
+  return useQuery({ queryKey: storeKeys.plugins(q), queryFn: () => store.plugins(q), staleTime: 30_000 })
+}
+
+// Fetched only when someone asks to read the files: the listing leaves them out.
+export function useStorePlugin(name: string | null) {
+  return useQuery({
+    queryKey: storeKeys.plugin(name || ""),
+    queryFn: () => store.plugin(name!),
+    enabled: Boolean(name),
+    staleTime: 60_000,
+  })
+}
+
 export function useStorePack(name: string | null) {
   return useQuery({
     queryKey: storeKeys.pack(name || ""),
