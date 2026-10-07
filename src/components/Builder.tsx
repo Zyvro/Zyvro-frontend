@@ -2054,6 +2054,42 @@ function AspectRatioPicker({ options, value, onChange }: { options: string[]; va
   )
 }
 
+// Les providers que le moteur sait faire répondre, nœud par nœud — les mêmes
+// listes que Zyvro-engine (providers/textrouter.go, imagerouter.go,
+// visionrouter.go), avec les noms de son catalogue. Une liste plus courte ici
+// qu'au moteur, c'est un provider configuré qu'on ne peut pas choisir : c'est
+// arrivé pour l'image, l'édition et la vision, qui n'avaient pas de champ du
+// tout, et pour les serveurs locaux, absents des nœuds de texte.
+const TEXT_PROVIDERS = ["", "ollama", "anthropic", "openai", "mimo", "claude-cli", "codex-cli", "qwen-cli", "mimo-cli", "ollama-local", "lmstudio", "custom"]
+const TEXT_PROVIDER_LABELS: Record<string, string> = {
+  "": "Deployment default",
+  ollama: "Ollama (API key)",
+  anthropic: "Claude (Anthropic API)",
+  openai: "OpenAI API",
+  mimo: "Xiaomi MiMo API (desktop)",
+  "claude-cli": "Claude CLI (desktop, your subscription)",
+  "codex-cli": "Codex CLI (desktop, your subscription)",
+  "qwen-cli": "Qwen Code CLI (desktop)",
+  "mimo-cli": "MiMo Code CLI (desktop, your MiMo account)",
+  "ollama-local": "Ollama (this machine, desktop)",
+  lmstudio: "LM Studio (this machine, desktop)",
+  custom: "Custom endpoint (desktop)",
+}
+const IMAGE_PROVIDER_FIELD: ConfigField = {
+  key: "provider",
+  label: "Provider",
+  type: "select",
+  options: ["", "google", "bfl", "custom-image"],
+  optionLabels: {
+    "": "Whichever key this project has",
+    google: "Gemini (Google)",
+    bfl: "FLUX (Black Forest Labs)",
+    "custom-image": "Custom image endpoint (desktop)",
+  },
+  default: "",
+}
+const IMAGE_MODEL_FIELD: ConfigField = { key: "model", label: "Model (optional)", type: "text", placeholder: "the provider's default" }
+
 const CONFIG_FIELDS: Record<string, ConfigField[]> = {
   textInput: [
     { key: "inputKey", label: "Input name (runtime)", type: "text", placeholder: "e.g. user_prompt" },
@@ -2071,19 +2107,11 @@ const CONFIG_FIELDS: Record<string, ConfigField[]> = {
       // The -cli entries run the command line tool installed on the machine,
       // which is how a ChatGPT, Claude or MiMo subscription drives a node
       // without an API key. They only resolve in Zyvro Studio, the desktop app,
-      // where the engine runs beside that installation — and so does `mimo`,
-      // Xiaomi's API, whose key is kept in the desktop's provider settings.
-      options: ["", "ollama", "anthropic", "openai", "mimo", "claude-cli", "codex-cli", "mimo-cli"],
-      optionLabels: {
-        "": "Deployment default",
-        ollama: "Ollama",
-        anthropic: "Claude (Anthropic API)",
-        openai: "OpenAI API",
-        "claude-cli": "Claude CLI (desktop, your subscription)",
-        "codex-cli": "Codex CLI (desktop, your subscription)",
-        mimo: "Xiaomi MiMo API (desktop)",
-        "mimo-cli": "MiMo Code CLI (desktop, your MiMo account)",
-      },
+      // where the engine runs beside that installation — and so do `mimo`,
+      // Xiaomi's API, and the servers on this machine (Ollama, LM Studio, a
+      // custom endpoint), set up in the desktop's provider settings.
+      options: TEXT_PROVIDERS,
+      optionLabels: TEXT_PROVIDER_LABELS,
       default: "",
     },
     { key: "model", label: "Model (optional)", type: "text", placeholder: "the provider's default" },
@@ -2112,6 +2140,8 @@ const CONFIG_FIELDS: Record<string, ConfigField[]> = {
   ],
   generateImage: [
     { key: "prompt", label: "Prompt (overrides input)", type: "textarea" },
+    IMAGE_PROVIDER_FIELD,
+    IMAGE_MODEL_FIELD,
     { key: "aspectRatio", label: "Aspect ratio", type: "aspectRatio", options: ["1:1", "16:9", "9:16", "4:3", "3:4"], default: "1:1" },
   ],
   // La vidéo est le seul nœud facturé à la seconde, et le tarif monte avec la
@@ -2156,7 +2186,7 @@ const CONFIG_FIELDS: Record<string, ConfigField[]> = {
     // la description est la bonne avant de payer la vraie.
     { key: "draft", label: "Draft — cheaper, HD, FLUX only", type: "checkbox", default: false },
   ],
-  editImage: [{ key: "prompt", label: "Edit instruction", type: "textarea" }],
+  editImage: [{ key: "prompt", label: "Edit instruction", type: "textarea" }, IMAGE_PROVIDER_FIELD, IMAGE_MODEL_FIELD],
   removeBackground: [
     {
       key: "mode",
@@ -2191,7 +2221,26 @@ const CONFIG_FIELDS: Record<string, ConfigField[]> = {
       default: "h",
     },
   ],
-  vision: [{ key: "instruction", label: "Instruction", type: "textarea" }],
+  vision: [
+    { key: "instruction", label: "Instruction", type: "textarea" },
+    {
+      key: "provider",
+      label: "Provider",
+      type: "select",
+      options: ["", "google", "ollama", "openai", "ollama-local", "lmstudio", "custom"],
+      optionLabels: {
+        "": "Whichever key this project has",
+        google: "Gemini (Google)",
+        ollama: "Ollama (API key)",
+        openai: "OpenAI API",
+        "ollama-local": "Ollama (this machine, desktop)",
+        lmstudio: "LM Studio (this machine, desktop)",
+        custom: "Custom endpoint (desktop)",
+      },
+      default: "",
+    },
+    { key: "model", label: "Model (optional)", type: "text", placeholder: "the provider's default" },
+  ],
   mergeText: [{ key: "separator", label: "Separator", type: "text", default: "\\n" }],
   brain: [
     { key: "goal", label: "Goal (overrides input)", type: "textarea" },
@@ -2200,8 +2249,8 @@ const CONFIG_FIELDS: Record<string, ConfigField[]> = {
       key: "provider",
       label: "Provider",
       type: "select",
-      options: ["", "ollama", "anthropic", "openai"],
-      optionLabels: { "": "Deployment default", ollama: "Ollama", anthropic: "Claude (Anthropic)", openai: "OpenAI" },
+      options: TEXT_PROVIDERS,
+      optionLabels: TEXT_PROVIDER_LABELS,
       default: "",
     },
     { key: "model", label: "Model (optional)", type: "text", placeholder: "the provider's default" },
